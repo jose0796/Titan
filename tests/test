@@ -1,0 +1,140 @@
+#! /usr/bin/vvp
+:ivl_version "10.1 (stable)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision + 0;
+:vpi_module "system";
+:vpi_module "vhdl_sys";
+:vpi_module "v2005_math";
+:vpi_module "va_math";
+S_0x559eb3378150 .scope module, "pc_source" "pc_source" 2 2;
+ .timescale 0 0;
+    .port_info 0 /INPUT 1 "clk"
+    .port_info 1 /INPUT 32 "pc"
+    .port_info 2 /OUTPUT 32 "pc_reg"
+o0x7f63db706018 .functor BUFZ 1, C4<z>; HiZ drive
+v0x559eb3376180_0 .net "clk", 0 0, o0x7f63db706018;  0 drivers
+o0x7f63db706048 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v0x559eb3397f50_0 .net "pc", 31 0, o0x7f63db706048;  0 drivers
+v0x559eb3398030_0 .var "pc_reg", 31 0;
+E_0x559eb336b890 .event edge, v0x559eb3397f50_0;
+S_0x559eb33782d0 .scope module, "tb" "tb" 3 6;
+ .timescale 0 0;
+v0x559eb3399510_0 .net "clk", 0 0, v0x559eb3398380_0;  1 drivers
+v0x559eb33995b0_0 .net "pc_i", 31 0, L_0x559eb33a99c0;  1 drivers
+v0x559eb33996c0_0 .net "pc_o", 31 0, v0x559eb3398dc0_0;  1 drivers
+o0x7f63db706288 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v0x559eb33997b0_0 .net "pc_reg", 31 0, o0x7f63db706288;  0 drivers
+v0x559eb3399870_0 .net "rst", 0 0, v0x559eb3399420_0;  1 drivers
+S_0x559eb3398170 .scope module, "clock" "clkgen" 3 10, 4 3 0, S_0x559eb33782d0;
+ .timescale 0 0;
+    .port_info 0 /OUTPUT 1 "clk"
+v0x559eb3398380_0 .var "clk", 0 0;
+S_0x559eb33984a0 .scope module, "pc_add4" "pc_add" 3 14, 5 2 0, S_0x559eb33782d0;
+ .timescale 0 0;
+    .port_info 0 /INPUT 32 "pc"
+    .port_info 1 /OUTPUT 32 "pc_next"
+L_0x7f63db6bd018 .functor BUFT 1, C4<00000000000000000000000000000100>, C4<0>, C4<0>, C4<0>;
+v0x559eb3398670_0 .net/2u *"_s0", 31 0, L_0x7f63db6bd018;  1 drivers
+v0x559eb3398770_0 .net "pc", 31 0, v0x559eb3398dc0_0;  alias, 1 drivers
+v0x559eb3398850_0 .net "pc_next", 31 0, L_0x559eb33a99c0;  alias, 1 drivers
+L_0x559eb33a99c0 .arith/sum 32, v0x559eb3398dc0_0, L_0x7f63db6bd018;
+S_0x559eb3398970 .scope module, "pc_register" "pc_reg" 3 18, 6 2 0, S_0x559eb33782d0;
+ .timescale 0 0;
+    .port_info 0 /INPUT 1 "clk_i"
+    .port_info 1 /INPUT 1 "rst_i"
+    .port_info 2 /INPUT 32 "pc_i"
+    .port_info 3 /OUTPUT 32 "pc_o"
+v0x559eb3398c30_0 .net "clk_i", 0 0, v0x559eb3398380_0;  alias, 1 drivers
+v0x559eb3398d00_0 .net "pc_i", 31 0, o0x7f63db706288;  alias, 0 drivers
+v0x559eb3398dc0_0 .var "pc_o", 31 0;
+v0x559eb3398ec0_0 .net "rst_i", 0 0, v0x559eb3399420_0;  alias, 1 drivers
+E_0x559eb336d950 .event posedge, v0x559eb3398380_0;
+S_0x559eb3399010 .scope module, "tbn" "testbench" 3 24, 7 2 0, S_0x559eb33782d0;
+ .timescale 0 0;
+    .port_info 0 /INPUT 32 "pc_i"
+    .port_info 1 /INPUT 1 "clk_i"
+    .port_info 2 /OUTPUT 1 "rst_o"
+v0x559eb3399250_0 .net "clk_i", 0 0, v0x559eb3398380_0;  alias, 1 drivers
+v0x559eb3399360_0 .net "pc_i", 31 0, L_0x559eb33a99c0;  alias, 1 drivers
+v0x559eb3399420_0 .var "rst_o", 0 0;
+    .scope S_0x559eb3378150;
+T_0 ;
+    %wait E_0x559eb336b890;
+    %load/vec4 v0x559eb3397f50_0;
+    %assign/vec4 v0x559eb3398030_0, 0;
+    %jmp T_0;
+    .thread T_0, $push;
+    .scope S_0x559eb3398170;
+T_1 ;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x559eb3398380_0, 0, 1;
+    %end;
+    .thread T_1;
+    .scope S_0x559eb3398170;
+T_2 ;
+    %delay 10, 0;
+    %load/vec4 v0x559eb3398380_0;
+    %inv;
+    %store/vec4 v0x559eb3398380_0, 0, 1;
+    %jmp T_2;
+    .thread T_2;
+    .scope S_0x559eb3398970;
+T_3 ;
+    %wait E_0x559eb336d950;
+    %vpi_call 6 9 "$display", "pc_i = %h , pc_o = %h", v0x559eb3398d00_0, v0x559eb3398dc0_0 {0 0 0};
+    %load/vec4 v0x559eb3398ec0_0;
+    %flag_set/vec4 8;
+    %jmp/0 T_3.0, 8;
+    %pushi/vec4 0, 0, 32;
+    %jmp/1 T_3.1, 8;
+T_3.0 ; End of true expr.
+    %load/vec4 v0x559eb3398d00_0;
+    %jmp/0 T_3.1, 8;
+ ; End of false expr.
+    %blend;
+T_3.1;
+    %assign/vec4 v0x559eb3398dc0_0, 0;
+    %jmp T_3;
+    .thread T_3;
+    .scope S_0x559eb3399010;
+T_4 ;
+    %pushi/vec4 1, 0, 1;
+    %store/vec4 v0x559eb3399420_0, 0, 1;
+    %pushi/vec4 5, 0, 32;
+T_4.0 %dup/vec4;
+    %pushi/vec4 0, 0, 32;
+    %cmp/s;
+    %jmp/1xz T_4.1, 5;
+    %jmp/1 T_4.1, 4;
+    %pushi/vec4 1, 0, 32;
+    %sub;
+    %wait E_0x559eb336d950;
+    %delay 5, 0;
+    %jmp T_4.0;
+T_4.1 ;
+    %pop/vec4 1;
+    %vpi_call 7 13 "$display", "pc_i = %h", v0x559eb3399360_0 {0 0 0};
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x559eb3399420_0, 0, 1;
+    %vpi_call 7 17 "$display", "pc_i (testbench) = %h", v0x559eb3399360_0 {0 0 0};
+    %load/vec4 v0x559eb3399360_0;
+    %cmpi/e 4, 0, 32;
+    %jmp/0xz  T_4.2, 4;
+    %vpi_call 7 19 "$display", "test 1: passed" {0 0 0};
+    %jmp T_4.3;
+T_4.2 ;
+    %vpi_call 7 21 "$display", "test 1: failed, pc = %h", v0x559eb3399360_0 {0 0 0};
+T_4.3 ;
+    %vpi_call 7 23 "$finish" {0 0 0};
+    %end;
+    .thread T_4;
+# The file index is used to find the file name in the following table.
+:file_names 8;
+    "N/A";
+    "<interactive>";
+    "./../pc_source.v";
+    "pc_test.v";
+    "./../clk_gen.v";
+    "./../pc_add.v";
+    "./../pc_reg.v";
+    "./../tb.v";
