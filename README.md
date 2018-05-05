@@ -1,2 +1,6 @@
 # Titan
-RISC-V ISA implementation in System Verilog. 
+RISC-V ISA RV32I implementation in System Verilog. 
+
+
+
+
