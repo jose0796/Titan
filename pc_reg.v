@@ -6,7 +6,7 @@ module pc_reg(
 	        output reg [31:0] pc_o); 
 
 	always @(posedge clk_i) begin
-	       $display("pc_i = %h , pc_o = %h", pc_i, pc_o); 	
+//	       $display("pc_i = %h , pc_o = %h", pc_i, pc_o); 	
 		pc_o <= (rst_i)? (32'h00000000): pc_i;
 	end	
 endmodule 
