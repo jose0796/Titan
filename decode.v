@@ -47,7 +47,6 @@ module decoder (
 		assign rs1 	 = instruction[19:15]; 
 		assign rs2 	 = instruction[24:20];
 		assign rd  	 = instruction[11:7]; 
-		assign imm 	 = _imm; 
 		//+- MEM STAGE ASSIGMENTS
 		assign mem_write = mem_wr;
 		assign mem_byte  = mem_b; 
@@ -56,7 +55,7 @@ module decoder (
 		assign mem_ex_sel= mem_ex_s;
 
 		//TYPES OF INSTRUCTIONS
-		reg lui, auipc;
+		reg lui,auipc;
 		reg jal, jalr; 
 		reg beq, bne, blt, bge, bltu, bgeu; 
 		reg lb, lh, lw, lbu, lhu;
@@ -68,6 +67,7 @@ module decoder (
 		reg rw, rs, rc, rwi, rsi, rci;
 		reg call, break, ret;
 		reg is_b, is_imm, is_st, is_unsigned, is_ld;
+		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_srl, is_sra, is_slt; 
 
 		//DECODE INSTRUCTION
 		always @(*) begin
@@ -129,9 +129,20 @@ module decoder (
 
 			is_unsigned = |{lbu,lhu,sltu,sltiu,bgeu,bltu};
 			is_b        = |{beq,bne,blt,bge,bgeu,bltu};
-			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai};
+			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori}; 
+			is_alu	    = |{add,sub,slt,sltu,_xor,_or,_and,sll,srl,sra}; 
 			is_st	    = |{sb, sh, sw}; 
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; 
+			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; 
+			is_sub	    = |{sub,is_b}; 
+			is_xor	    = |{_xor,xori};
+			is_and	    = |{_and,andi}; 
+			is_or	    = |{_or,ori}; 
+			is_sll      = |{sll, slli}; 
+			is_sr	    = |{sra, srl, srai, srli};
+			is_immop    = |{addi,slti, sltiu, ori, andi, xori, jalr, is_st, is_ld};
+			is_wr       = |{is_imm, is_alu, is_ld}; 
+			
 
 		end
 	
@@ -152,19 +163,51 @@ module decoder (
 		//SIGNED EXTENSION
 		always @(*) begin
 			if (is_unsigned) begin 
-				_imm <= $unsigned(_imm); 
+				imm <= $unsigned(_imm); 
 			end else begin
-				_imm <= $signed(_imm); 
+				imm <= $signed(_imm); 
 			end 
 		end 
 
 		//CONTROL SIGNALS 
-		assign mem_wr 	= (is_st)? 1'b1: 1'b0; 
-		assign mem_r  	= (is_ld)? 1'b1: 1'b0;
-		assign mem_b	= (|{lb,lbu,sb})? 1'b1 : 1'b0;
-		assign mem_hw  	= (|{lh,lhu,sh})? 1'b1 : 1'b0; 
-		assign mem_ex_s = (|{is_ld, is_st})? 1'b1
-endmodule				
+		assign mem_wr 	  = (is_st)? 1'b1: 1'b0; 
+		assign mem_r  	  = (is_ld)? 1'b1: 1'b0;
+		assign mem_b	  = (|{lb,lbu,sb})? 1'b1 : 1'b0;
+		assign mem_hw  	  = (|{lh,lhu,sh})? 1'b1 : 1'b0; 
+		assign mem_ex_s   = (|{is_ld})? 1'b1 : 1'b0; 
+		assign syscall_op = (call)? 1'b1 : 1'b0; 
+	        assign break_op   = (break)? 1'b1: 1'b0;
+		assign branch_op  = (is_b) ? 1'b1: 1'b0; 
+		assign reg_write  = (is_wr)? 1'b1: 1'b0;
+
+
+		//ALU_OP
+		always @(*) begin
+			case(1'b1) begin
+				is_add : alu_op <= 4'b0000; 
+				is_sub : alu_op <= 4'b0001;
+				is_and : alu_op <= 4'b0010;
+				is_or  : alu_op <= 4'b0011;
+				is_xor : alu_op <= 4'b0100;
+				is_sll : alu_op <= 4'b0101;
+				is_sra : alu_op <= ((sra && srai)? 4'b0110 : 4'b0111);
+			endcase
+		end 
+
+		//ALU_PORT_B SELECTION
+		always @(*) begin 
+			case(1'b1) begin
+				if(is_immop) begin 
+					ex_portb_sel = 1'b1;
+				end else begin 
+					ex_portb_sel = 1'b0; 
+				end
+			endcase
+		end
+
+		always @(*) begin 
+
+endmodule			
 
 
 
