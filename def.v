@@ -52,8 +52,7 @@
 `define sub_f7		7'b0100000
 `define sra_f7		7'b0100000
 ////---------SPECIAL INST----------
-`define fenc_op		7'b0001111
-`define nop		32'h33
+`define nop_op		32'h33
 //===========CSR INST===========
 `define sp_op		7'b1110011
 `define rw_f3		3'b001

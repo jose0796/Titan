@@ -1,4 +1,6 @@
-`include "def.v"
+
+`include "./def.v"
+
 module decoder (
 		input [31:0] instruction,
 		input [31:0] pc, 
@@ -15,11 +17,11 @@ module decoder (
 		output mem_halfword,
 		output mem_read,
 		output mem_ex_sel,
-		output [31:0] mem_data_st;
+		output [31:0] mem_data_st,
 		//EX STAGE CONTROL SIGNALS
-		output [3:0] alu_op, 	
-		output [31:0] imm,
-		output [1:0] ex_portb_sel,
+		output reg [3:0] alu_op, 	
+		output reg [31:0] imm,
+		output reg [1:0] ex_portb_sel,
 		output syscall_op,
 		output branch_op,
 		output break_op	  ); 
@@ -67,65 +69,65 @@ module decoder (
 		reg rw, rs, rc, rwi, rsi, rci;
 		reg call, break, ret;
 		reg is_b, is_imm, is_st, is_unsigned, is_ld;
-		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_srl, is_sra, is_slt; 
-
+		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt; 
+		reg is_wr, is_alu, is_immop;
 		//DECODE INSTRUCTION
 		always @(*) begin
 			//
-			lui 	= opcode == lui_op;
-			auipc 	= opcode == auipc_op;
+			lui 	= opcode == `lui_op;
+			auipc 	= opcode == `auipc_op;
 			//JUMP OPERATIONS
-			jal 	= opcode == jal_op;
-			jalr	= opcode == jalr_op;
+			jal 	= opcode == `jal_op;
+			jalr	= opcode == `jalr_op;
 			//BRANCH OPERATIONS
-			beq	= opcode == br_op  && func3 == beq_f3;
-			bne	= opcode == br_op  && func3 == bne_f3;
-			blt	= opcode == br_op  && func3 == blt_f3;
-			bge	= opcode == br_op  && func3 == bge_f3;
-			bltu	= opcode == br_op  && func3 == bltu_f3;
-			bgeu	= opcode == br_op  && func3 == bgeu_f3;
+			beq	= opcode == `br_op  && func3 == `beq_f3;
+			bne	= opcode == `br_op  && func3 == `bne_f3;
+			blt	= opcode == `br_op  && func3 == `blt_f3;
+			bge	= opcode == `br_op  && func3 == `bge_f3;
+			bltu	= opcode == `br_op  && func3 == `bltu_f3;
+			bgeu	= opcode == `br_op  && func3 == `bgeu_f3;
 			//LOAD OPERATIONS
-			lb	= opcode == ld_op  && func3 == lb_f3;
-			lh	= opcode == ld_op  && func3 == lh_f3;
-			lw	= opcode == ld_op  && func3 == lw_f3;
-			lbu	= opcode == ld_op  && func3 == lbu_f3;
-			lhu	= opcode == ld_op  && func3 == lhu_f3;
+			lb	= opcode == `ld_op  && func3 == `lb_f3;
+			lh	= opcode == `ld_op  && func3 == `lh_f3;
+			lw	= opcode == `ld_op  && func3 == `lw_f3;
+			lbu	= opcode == `ld_op  && func3 == `lbu_f3;
+			lhu	= opcode == `ld_op  && func3 == `lhu_f3;
 			//STORE OPERATIONS
-			sb	= opcode == st_op  && func3 == sb_f3;
-			sh	= opcode == st_op  && func3 == sh_f3;
-			sw	= opcode == st_op  && func3 == sw_f3;
+			sb	= opcode == `st_op  && func3 == `sb_f3;
+			sh	= opcode == `st_op  && func3 == `sh_f3;
+			sw	= opcode == `st_op  && func3 == `sw_f3;
 			//INMEDIATE OPERATIONS
-			addi	= opcode == imm_op && func3 == addi_f3;
-			slti	= opcode == imm_op && func3 == slti_f3;	
-			sltiu	= opcode == imm_op && func3 == sltiu_f3;
-			xori	= opcode == imm_op && func3 == xori_f3;
-			ori	= opcode == imm_op && func3 == ori_f3;
-			andi	= opcode == imm_op && func3 == andi_f3;
-			slli	= opcode == imm_op && func3 == slli_f3    && func7 == slli_f7;
-			srli	= opcode == imm_op && func3 == sr_f3      && func7 == srli_f7;
-			srai	= opcode == imm_op && func3 == sr_f3      && func7 == srai_f7;
+			addi	= opcode == `imm_op && func3 == `addi_f3;
+			slti	= opcode == `imm_op && func3 == `slti_f3;	
+			sltiu	= opcode == `imm_op && func3 == `sltiu_f3;
+			xori	= opcode == `imm_op && func3 == `xori_f3;
+			ori	= opcode == `imm_op && func3 == `ori_f3;
+			andi	= opcode == `imm_op && func3 == `andi_f3;
+			slli	= opcode == `imm_op && func3 == `slli_f3    && func7 == `slli_f7;
+			srli	= opcode == `imm_op && func3 == `sr_f3      && func7 == `srli_f7;
+			srai	= opcode == `imm_op && func3 == `sr_f3      && func7 == `srai_f7;
 			//ALU OPERATIONS
-			add	= opcode == alu_op && func3 == add_sub_f3 && func7 == alu_f7;
-			sub 	= opcode == alu_op && func3 == add_sub_f3 && func7 == sub_f7;
-			slt	= opcode == alu_op && func3 == slt_f3 	  && func7 == alu_f7;	
-			sltu	= opcode == alu_op && func3 == sltu_f3    && func7 == alu_f7;
-			_xor	= opcode == alu_op && func3 == xor_f3     && func7 == alu_f7;
-			_or	= opcode == alu_op && func3 == or_f3      && func7 == alu_f7;
-			_and	= opcode == alu_op && func3 == and_f3     && func7 == alu_f7;
-			sll	= opcode == alu_op && func3 == sll_f3     && func7 == alu_f7;
-			srl	= opcode == alu_op && func3 == sr_f3      && func7 == alu_f7;
-			sra	= opcode == alu_op && func3 == sr_f3      && func7 == sra_f7;
+			add	= opcode == `alu_op && func3 == `add_sub_f3 && func7 == `alu_f7;
+			sub 	= opcode == `alu_op && func3 == `add_sub_f3 && func7 == `sub_f7;
+			slt	= opcode == `alu_op && func3 == `slt_f3     && func7 == `alu_f7;	
+			sltu	= opcode == `alu_op && func3 == `sltu_f3    && func7 == `alu_f7;
+			_xor	= opcode == `alu_op && func3 == `xor_f3     && func7 == `alu_f7;
+			_or	= opcode == `alu_op && func3 == `or_f3      && func7 == `alu_f7;
+			_and	= opcode == `alu_op && func3 == `and_f3     && func7 == `alu_f7;
+			sll	= opcode == `alu_op && func3 == `sll_f3     && func7 == `alu_f7;
+			srl	= opcode == `alu_op && func3 == `sr_f3      && func7 == `alu_f7;
+			sra	= opcode == `alu_op && func3 == `sr_f3      && func7 == `sra_f7;
 			//SPECIAL OPERATIONS
-			nop	= instruction == nop_op;
-			rw	= opcode == sp_op  && func3 == rw_f3; 
-			rs	= opcode == sp_op  && func3 == rs_f3;
-			rc	= opcode == sp_op  && func3 == rc_f3;
-			rwi	= opcode == sp_op  && func3 == rwi_f3;
-			rsi	= opcode == sp_op  && func3 == rsi_f3;
-			rsc	= opcode == sp_op  && func3 == rci_f3;
-			call	= opcode == sp_op  && inst[31:7]  == syscall;
-			break	= opcode == sp_op  && inst[31:7]  == break; 
-			ret	= opcode == sp_op  && inst[31:30] == mret_f2 && inst[27:7] == mret_f21; 
+			nop	= instruction == `nop_op;
+			rw	= opcode == `sp_op  && func3 == `rw_f3; 
+			rs	= opcode == `sp_op  && func3 == `rs_f3;
+			rc	= opcode == `sp_op  && func3 == `rc_f3;
+			rwi	= opcode == `sp_op  && func3 == `rwi_f3;
+			rsi	= opcode == `sp_op  && func3 == `rsi_f3;
+			rci	= opcode == `sp_op  && func3 == `rci_f3;
+			call	= opcode == `sp_op  && inst[31:7]  == `syscall;
+			break	= opcode == `sp_op  && inst[31:7]  == `break; 
+			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
 			is_unsigned = |{lbu,lhu,sltu,sltiu,bgeu,bltu};
 			is_b        = |{beq,bne,blt,bge,bgeu,bltu};
@@ -182,31 +184,28 @@ module decoder (
 
 
 		//ALU_OP
-		always @(*) begin
-			case(1'b1) begin
+		
+		always begin
+			#1
+			case(1'b1) 
 				is_add : alu_op <= 4'b0000; 
 				is_sub : alu_op <= 4'b0001;
 				is_and : alu_op <= 4'b0010;
 				is_or  : alu_op <= 4'b0011;
 				is_xor : alu_op <= 4'b0100;
 				is_sll : alu_op <= 4'b0101;
-				is_sra : alu_op <= ((sra && srai)? 4'b0110 : 4'b0111);
+				is_sr  : begin alu_op <= ((sra && srai)? 4'b0110 : 4'b0111); end
 			endcase
 		end 
 
 		//ALU_PORT_B SELECTION
 		always @(*) begin 
-			case(1'b1) begin
-				if(is_immop) begin 
-					ex_portb_sel = 1'b1;
-				end else begin 
-					ex_portb_sel = 1'b0; 
-				end
-			endcase
+			if(is_immop) begin 
+				ex_portb_sel = 2'b01;
+			end else begin 
+				ex_portb_sel = 2'b00; 
+			end
 		end
-
-		always @(*) begin 
-
 endmodule			
 
 
