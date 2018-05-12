@@ -5,7 +5,7 @@ module decoder (
 		input [31:0] instruction,
 		input [31:0] pc, 
 	        //IF STATE SIGNALS
-		output pc_branch_address,
+//		output pc_branch_address,
 		//ID STAGE SIGNALS
 		output [4:0] rs1, 
 		output [4:0] rs2,
@@ -21,7 +21,7 @@ module decoder (
 		//EX STAGE CONTROL SIGNALS
 		output reg [3:0] alu_op, 	
 		output reg [31:0] imm,
-		output reg [1:0] ex_portb_sel,
+		output reg ex_portb_sel,
 		output syscall_op,
 		output branch_op,
 		output break_op	  ); 
@@ -153,12 +153,12 @@ module decoder (
 		always @(*) begin
 			case(1'b1)
 				
-				lui && auipc	: _imm <= {12'b0, inst[31:12]}; 
-				jal		: _imm <= {12'b0, inst[31], inst[21:12], inst[22], inst[30:23]}; 
-				jalr		: _imm <= {20'b0, inst[31:20]};
-			       	is_b 		: _imm <= {20'b0, inst[31], inst[29:25], inst[11:7], inst[30]}; 	
-				is_imm || is_ld	: _imm <= {20'b0, inst[31:20]}; 
-				is_st		: _imm <= {20'b0, inst[31:25], inst[11:7]};
+				lui && auipc	: _imm <= { ((inst[31])? 12'hfff : 12'b0), inst[31:12]}; 
+				jal		: _imm <= { ((inst[31])? 12'hfff: 12'b0), inst[31], inst[21:12], inst[22], inst[30:23]}; 
+				jalr		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]};
+			       	is_b 		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[29:25], inst[11:7], inst[30]}; 	
+				is_imm || is_ld	: _imm <= { ((inst[31])? 20'hfffff : 20'b0) , inst[31:20]}; 
+				is_st		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
 			endcase
 		end 
 		
@@ -185,8 +185,7 @@ module decoder (
 
 		//ALU_OP
 		
-		always begin
-			#1
+		always @(*) begin
 			case(1'b1) 
 				is_add : alu_op <= 4'b0000; 
 				is_sub : alu_op <= 4'b0001;
@@ -194,16 +193,16 @@ module decoder (
 				is_or  : alu_op <= 4'b0011;
 				is_xor : alu_op <= 4'b0100;
 				is_sll : alu_op <= 4'b0101;
-				is_sr  : begin alu_op <= ((sra && srai)? 4'b0110 : 4'b0111); end
+				is_sr  : alu_op <= ((sra && srai)? 4'b0110 : 4'b0111);
 			endcase
 		end 
 
 		//ALU_PORT_B SELECTION
 		always @(*) begin 
 			if(is_immop) begin 
-				ex_portb_sel = 2'b01;
+				ex_portb_sel = 1'b1;
 			end else begin 
-				ex_portb_sel = 2'b00; 
+				ex_portb_sel = 1'b0; 
 			end
 		end
 endmodule			
