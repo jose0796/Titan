@@ -1,12 +1,12 @@
-`include "../ls_unit.v"
-`include "../clk_gen.v"
-`include "../bram.v"
-`include "../pc_source.v"
-`include "../pc_add.v"
-`include "../pc_reg.v"
-`include "../ifid_reg.v"
-`include "../id_stage.v"
-`include "./ifid_stage_tb.v"
+`include "./rtl/ls_unit.v"
+`include "./rtl/clk_gen.v"
+`include "./rtl/bram.v"
+`include "./rtl/pc_source.v"
+`include "./rtl/pc_add.v"
+`include "./rtl/pc_reg.v"
+`include "./rtl/ifid_reg.v"
+`include "./rtl/id_stage.v"
+`include "./tests/ifid_stage_tb.v"
 
 
 module tb; 
@@ -51,40 +51,40 @@ module tb;
 	wire break_op;
 
 
-	clkgen   	clkg (clk);  
+	clkgen    CLK	     (clk);  
 
 	
-	pc_source mux 	    (
+	pc_source PC_SOURCE  (
 				.pc(pc_add4),
 				.pc_reg(pc_i) );
 
-	pc_add pc_add_4     (
+	pc_add      PC_ADD4  (
 				.pc(pc_o), 
 				.pc_next(pc_add4));
 
 
-	pc_reg register     ( 
+	pc_reg 	     PC_REG  ( 
 				.clk_i(clk),
 				.rst_i(rst),
 				.stall(if_stall),
 				.pc_i(pc_i),
 				.pc_o(pc_o) ); 
-	bram br ( 
-		 	.clk(clk),
-			.rst(rst),
-			.iaddr_i(iaddr_o),
-			.idat_i(idat_o),
-			.isel_i(isel_o),
-			.icyc_i(icyc_o),
-			.istb_i(istb_o),
-			.iwe_i(iwe_o),
-			.idat_o(idat_i),
-			.iack_o(iack_i),
-			.ierr_o(ierr_i) );
+	bram 		RAM  ( 
+		 		.clk(clk),
+				.rst(rst),
+				.iaddr_i(iaddr_o),
+				.idat_i(idat_o),
+				.isel_i(isel_o),
+				.icyc_i(icyc_o),
+				.istb_i(istb_o),
+				.iwe_i(iwe_o),
+				.idat_o(idat_i),
+				.iack_o(iack_i),
+				.ierr_o(ierr_i) );
 
 
 
-	load_store_unit LSU (
+	load_store_unit LSU  (
 				.clk(clk),
 				.rst(rst),
 				.pc (pc_o),
@@ -102,7 +102,7 @@ module tb;
 				.ready(if_ready),
 				.xint(xint));
 
-	ifid_register   ifid_re (
+	ifid_register IF_ID (
 				 .clk(clk),
 			 	 .rst(rst),
 				 .pc_i(pc_o),
@@ -112,7 +112,7 @@ module tb;
 				 .inst_i(if_instruction),
 				 .inst_o(id_instruction));	 
 
-	decoder 	id  (
+	decoder	   DECODE  (
        				.instruction(id_instruction),
 				.pc(id_pc),
 				.rs1(rs1),
@@ -132,7 +132,7 @@ module tb;
 				.break_op(break_op));		
 		 
 			 
-	testbench 	test(
+	testbench  TEST   (
 				.clk(clk),
 				.rst(rst),
 				.ready(id_ready),

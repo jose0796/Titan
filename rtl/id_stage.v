@@ -1,5 +1,5 @@
 
-`include "../def.v"
+`include "./rtl/def.v"
 
 module decoder (
 		input [31:0] instruction,

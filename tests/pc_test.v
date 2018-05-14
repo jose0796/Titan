@@ -1,8 +1,8 @@
-`include "pc_tb.v"
-`include "../pc_reg.v"
-`include "../pc_add.v"
-`include "../pc_source.v"
-`include "../clk_gen.v"
+`include "./tests/pc_tb.v"
+`include "./rtl/pc_reg.v"
+`include "./rtl/pc_add.v"
+`include "./rtl/pc_source.v"
+`include "./rtl/clk_gen.v"
 module tb; 
 	
 	wire clk, rst; 

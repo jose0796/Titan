@@ -25,7 +25,10 @@ module testbench(
 		  rst <= 1;
 		  repeat(2) @(posedge clk) #1; 
 		  rst <= 0;
-		  repeat(4) begin 
+		  $display("Instruction to be fetch and decoded: "); 
+		  $display("+ fff70713     addi a4, a4,-1"); 
+		  $display("+ 0016f793     andi a5, a3, 1"); 
+		  repeat(2) begin 
 		  @(posedge ready) #1;
 		  $display("+++++++++++++++++++++++++++++++"); 
 		  $display("instruction  = %h", instruction); 

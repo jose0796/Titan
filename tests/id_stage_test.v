@@ -1,5 +1,5 @@
-`include "./id_stage_tb.v"
-`include "../id_stage.v"
+`include "./tests/id_stage_tb.v"
+`include "./rtl/id_stage.v"
 
 module tb; 
 	wire [31:0] pc;

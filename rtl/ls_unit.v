@@ -35,9 +35,8 @@ module load_store_unit (
 
 	       
 
-	       	localparam i_str  = 2'b00;
-	       	localparam i_rx	 = 2'b01;
-	       	localparam i_ab	 = 2'b10;
+	       	localparam i_str  = 1'b0;
+	       	localparam i_ab	  = 1'b1;
 	       	reg [9:0]  no_rps = 10'b1000000000; 
 	       	reg [1:0]  i_state; 
 		

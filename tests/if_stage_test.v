@@ -1,11 +1,11 @@
-`include "../ls_unit.v"
-`include "../clk_gen.v"
-`include "../bram.v"
-`include "../pc_source.v"
-`include "../pc_add.v"
-`include "../pc_reg.v"
-`include "../ifid_reg.v"
-`include "./if_stage_tb.v"
+`include "./rtl/ls_unit.v"
+`include "./rtl/clk_gen.v"
+`include "./rtl/bram.v"
+`include "./rtl/pc_source.v"
+`include "./rtl/pc_add.v"
+`include "./rtl/pc_reg.v"
+`include "./rtl/ifid_reg.v"
+`include "./tests/if_stage_tb.v"
 
 module tb; 
 

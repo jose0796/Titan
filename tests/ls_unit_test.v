@@ -1,10 +1,10 @@
-`include "../ls_unit.v"
-`include "ls_unit_tb.v"
-`include "../clk_gen.v"
-`include "./bram.v"
-`include "../pc_source.v"
-`include "../pc_add.v"
-`include "../pc_reg.v"
+`include "./rtl/ls_unit.v"
+`include "./tests/ls_unit_tb.v"
+`include "./rtl/clk_gen.v"
+`include "./rtl/bram.v"
+`include "./rtl/pc_source.v"
+`include "./rtl/pc_add.v"
+`include "./rtl/pc_reg.v"
 
 module tb; 
 
@@ -27,19 +27,19 @@ module tb;
 	wire 	    if_stall;
 	wire 	    ready;
 	wire 	    xint;
-	clkgen   	clkg (clk);  
+	clkgen  	CLK (clk);  
 
 	
-	pc_source mux 	    (
+	pc_source PC_SOURCE (
 				.pc(pc_add4),
 				.pc_reg(pc_i) );
 
-	pc_add pc_add_4     (
+	pc_add	    PC_ADD4 (
 				.pc(pc_o), 
 				.pc_next(pc_add4));
 
 
-	pc_reg register     ( 
+	pc_reg 	     PC_REG ( 
 				.clk_i(clk),
 				.rst_i(rst),
 				.stall(if_stall),
@@ -64,33 +64,22 @@ module tb;
 		       		.if_stall(if_stall),
 				.ready(ready),
 				.xint(xint)); 
-	testbench 	test(
+	testbench      TEST (
 				.clk(clk),
 				.rst(rst),
 				.stall(if_stall),
 				.ready(ready),
 				.instruction(instruction) ); 
-	/*			.idat_o(idat_i),
-				.iack_o(iack_i),
-				.ierr_o(ierr_i),
+	bram 	       BRAM ( 
+		 		.clk(clk),
+				.rst(rst),
 				.iaddr_i(iaddr_o),
 				.idat_i(idat_o),
 				.isel_i(isel_o),
 				.icyc_i(icyc_o),
 				.istb_i(istb_o),
 				.iwe_i(iwe_o),
-				.if_stall(if_stall),
-				.xint(xint)*/
-	bram br ( 
-		 	.clk(clk),
-			.rst(rst),
-			.iaddr_i(iaddr_o),
-			.idat_i(idat_o),
-			.isel_i(isel_o),
-			.icyc_i(icyc_o),
-			.istb_i(istb_o),
-			.iwe_i(iwe_o),
-			.idat_o(idat_i),
-			.iack_o(iack_i),
-			.ierr_o(ierr_i) );
+				.idat_o(idat_i),
+				.iack_o(iack_i),
+				.ierr_o(ierr_i) );
 endmodule

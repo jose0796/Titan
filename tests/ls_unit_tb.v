@@ -30,6 +30,7 @@ module testbench(
 			repeat(4) begin
 				@(posedge ready) #1;
 				$display("instruction = %h", instruction);
+				#20;
 			end
 			$finish;
 		end 
