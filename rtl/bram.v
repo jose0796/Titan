@@ -37,8 +37,8 @@ module bram(
 					b_str: begin
 						iack_o <= 1'b0;
 						if( icyc_i && istb_i) begin
-							iack_o <= 1'b1;
-							idat_o  = memory[iaddr_i]; 
+							iack_o 	<= 1'b1;
+							idat_o 	<= memory[iaddr_i]; 
 							b_state <= b_str; 
 						end 
 
