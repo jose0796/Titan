@@ -17,8 +17,10 @@ module load_store_unit (
 			output reg        istb_o,
 			output reg        iwe_o,
 			output reg 	  if_stall,
+			output reg	  ready,
 			output reg 	  xint,
-	       		output reg 	  abort		); 
+	       		output reg 	  abort,
+			output reg 	  no_mem	); 
 			//DATA MEMORY PORT
 /*			input [31:0]  ddat_i,
 			input 	      dack_i,
@@ -33,12 +35,12 @@ module load_store_unit (
 
 	       
 
-	       localparam i_rst  = 2'b00;
-	       localparam i_str  = 2'b01;
-	       localparam i_rx	 = 2'b10;
-	       localparam i_ab	 = 2'b11;
-	       reg [9:0]  no_rps = 10'b1000000000; 
-	       reg [1:0]  i_state; 
+	       	localparam i_str  = 2'b00;
+	       	localparam i_rx	 = 2'b01;
+	       	localparam i_ab	 = 2'b10;
+	       	reg [9:0]  no_rps = 10'b1000000000; 
+	       	reg [1:0]  i_state; 
+		
 
 		always @(*) xint <= ~(pc[1:0] == 0); 
 
@@ -47,16 +49,22 @@ module load_store_unit (
 			isel_o  <= 1'bx; 
 			iwe_o   <= 1'b0;
 		end
-			
+	
+		always @(negedge iack_i) begin
+		 	if_stall = ~if_stall;
+		end 
 
 		always @(posedge clk) begin
 			if (rst) begin 
 				//INTRUCTION MEMORY PORT RESET
-				i_state <= i_rst;
-				iaddr_o <= 32'hx;
-				icyc_o  <= 1'b0;
-				istb_o  <= 1'b0; 
-				abort   <= 1'b0;
+
+				if_stall <= 1'b1;
+				i_state  <= i_str;
+				iaddr_o  <= 32'hx;
+				icyc_o   <= 1'b0;
+				istb_o   <= 1'b0; 
+				abort    <= 1'b0;
+				ready    <= 1'b0;
 				//DATA MEMORY PORT RESET
 /*				ddat_o  <= 32'hx; 
 				daddr_o <= 32'hx;
@@ -67,36 +75,34 @@ module load_store_unit (
 
 			end else begin
 				case (i_state)
-					i_rst: begin
-						icyc_o <= pc[1:0] == 0;
-						i_state <= i_str;
-					end
 					i_str: begin
+						ready   <= 1'b0;
+						icyc_o  <= pc[1:0] == 0;
 						iaddr_o <= pc;
 						istb_o  <= pc[1:0] == 0; 
 						if(iack_i) begin 
-							i_state <= i_rx;
-						end else begin 
+							instruction <= idat_i;
+							icyc_o <= 1'b0;
+							istb_o <= 1'b0;
+							ready  <= 1'b1;
+							i_state <= i_str;
+						end 
+						else begin 
 							no_rps <= {no_rps[0],no_rps[9:1]};
 							if(no_rps == 10'd1) begin
 								abort  <= 1'b1;
 								icyc_o <= 1'b0; 
 								istb_o <= 1'b0;
+								no_mem <= 1'b1;
 								i_state <= i_ab; 
 							end	
 						end
-					end
-					i_rx: begin
-						instruction <= idat_i;
-						icyc_o <= 1'b0; 
-						istb_o <= 1'b0;
-						i_state <= i_rst;
 					end
 					i_ab: begin
 						i_state <= i_ab;
 					end
 					default: begin 
-						i_state <= i_rst; 
+						i_state <= i_str; 
 						icyc_o <= 1'b0;
 					end 
 				endcase

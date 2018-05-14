@@ -1,5 +1,5 @@
 
-`include "./def.v"
+`include "../def.v"
 
 module decoder (
 		input [31:0] instruction,
@@ -153,11 +153,11 @@ module decoder (
 		always @(*) begin
 			case(1'b1)
 				
-				lui && auipc	: _imm <= { ((inst[31])? 12'hfff : 12'b0), inst[31:12]}; 
-				jal		: _imm <= { ((inst[31])? 12'hfff: 12'b0), inst[31], inst[21:12], inst[22], inst[30:23]}; 
+				lui || auipc	: _imm <= { ((inst[31])? 12'hfff   : 12'b0), inst[31:12]}; 
+				jal		: _imm <= { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
 				jalr		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]};
-			       	is_b 		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[29:25], inst[11:7], inst[30]}; 	
-				is_imm || is_ld	: _imm <= { ((inst[31])? 20'hfffff : 20'b0) , inst[31:20]}; 
+			       	is_b 		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
+				is_imm || is_ld	: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
 				is_st		: _imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
 			endcase
 		end 

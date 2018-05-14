@@ -1,5 +1,5 @@
-`include "../decode_tb.v"
-`include "../decode.v"
+`include "./id_stage_tb.v"
+`include "../id_stage.v"
 
 module tb; 
 	wire [31:0] pc;
