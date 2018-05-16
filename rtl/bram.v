@@ -20,10 +20,12 @@ module bram(
 		localparam b_tx  = 1'b1; 
 
 		initial begin
-			memory[0] = 32'hfff70713;
-			memory[4] = 32'h0016f793;
-			memory[8] = 32'hDEADF00D;
-			memory[12] = 32'hDEADCADD;
+			memory[0]  = 32'hfff70713;
+			memory[4]  = 32'h0016f793;
+			memory[8]  = 32'h0001e2b7;
+			memory[12] = 32'h00001297;
+			memory[16] = 32'h0000006f;
+			memory[20] = 32'h000900e7;
 		end
 
 		always @(posedge clk) begin

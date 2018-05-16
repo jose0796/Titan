@@ -5,7 +5,7 @@
 `include "./rtl/pc_add.v"
 `include "./rtl/pc_reg.v"
 `include "./rtl/ifid_reg.v"
-`include "./rtl/id_stage.v"
+`include "./rtl/dc_unit.v"
 `include "./tests/ifid_stage_tb.v"
 
 
@@ -38,15 +38,19 @@ module tb;
 	wire [4:0]  rs2;
 	wire [4:0]  rd;
 	wire reg_write;
+	wire [2:0] comparator_op;
 	wire mem_write;
 	wire mem_byte;
 	wire mem_halfword;
 	wire mem_read;
 	wire mem_ex_sel;
-	wire [3:0] alu_op;
+	wire mem_unsigned;
+	wire [2:0] alu_op;
 	wire [31:0] imm;
-	wire ex_portb_sel;
+	wire portb_sel;
+	wire porta_sel;
 	wire syscall_op;
+	wire jump_op;
 	wire branch_op;
 	wire break_op;
 
@@ -114,20 +118,23 @@ module tb;
 
 	decoder	   DECODE  (
        				.instruction(id_instruction),
-				.pc(id_pc),
 				.rs1(rs1),
 				.rs2(rs2),
 				.rd(rd),
 				.reg_write(reg_write),
+				.comparator_op(comparator_op),
 				.mem_write(mem_write),
 				.mem_halfword(mem_halfword),
 				.mem_byte(mem_byte),
 				.mem_read(mem_read),
 				.mem_ex_sel(mem_ex_sel),
+				.mem_unsigned(mem_unsigned),
 				.alu_op(alu_op),
 				.imm(imm),
-				.ex_portb_sel(ex_portb_sel),
+				.portb_sel(portb_sel),
+				.porta_sel(porta_sel),
 				.syscall_op(syscall_op),
+				.jump_op(jump_op),
 				.branch_op(branch_op),
 				.break_op(break_op));		
 		 
@@ -137,21 +144,24 @@ module tb;
 				.rst(rst),
 				.ready(id_ready),
 				.instruction(id_instruction),
-				.pc(id_pc),
 				.rs1(rs1),
 				.rs2(rs2),
 				.rd(rd),
 				.reg_write(reg_write),
+				.comparator_op(comparator_op),
 				.mem_write(mem_write),
 				.mem_halfword(mem_halfword),
 				.mem_byte(mem_byte),
 				.mem_read(mem_read),
 				.mem_ex_sel(mem_ex_sel),
+				.mem_unsigned(mem_unsigned),
 				.alu_op(alu_op),
 				.imm(imm),
-				.ex_portb_sel(ex_portb_sel),
+				.portb_sel(portb_sel),
+				.porta_sel(porta_sel),
 				.syscall_op(syscall_op),
 				.branch_op(branch_op),
+				.jump_op(jump_op),
 				.break_op(break_op));		
 		 
 

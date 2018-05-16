@@ -78,13 +78,14 @@ module load_store_unit (
 						ready   <= 1'b0;
 						icyc_o  <= pc[1:0] == 0;
 						iaddr_o <= pc;
-						istb_o  <= pc[1:0] == 0; 
+						istb_o  <= pc[1:0] == 0;
 						if(iack_i) begin 
 							instruction <= idat_i;
 							icyc_o <= 1'b0;
 							istb_o <= 1'b0;
 							ready  <= 1'b1;
 							i_state <= i_str;
+							no_rps <= 10'b1000000000;
 						end 
 						else begin 
 							no_rps <= {no_rps[0],no_rps[9:1]};
