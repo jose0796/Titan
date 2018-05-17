@@ -1,4 +1,4 @@
-`include "./tests/id_stage_tb.v"
+`include "./tests/dc_unit_tb.v"
 `include "./rtl/dc_unit.v"
 
 module tb; 
@@ -34,7 +34,6 @@ module tb;
 			.mem_byte(mem_byte),
 			.mem_halfword(mem_halfword),
 			.mem_read(mem_read),
-			.mem_ex_sel(mem_ex_sel),
 			.mem_unsigned(mem_unsigned),
 			.alu_op(alu_op),
 			.imm(imm),
@@ -44,12 +43,10 @@ module tb;
 			.branch_op(branch_op),
 			.jump_op(jump_op),
 			.break_op(break_op),
-			.pc(pc),
 			.instruction(instruction) ); 
 
 	decoder decode (	
 			.instruction(instruction),
-			.pc(pc),
 			.rs1(rs1),
 			.rs2(rs2),
 			.rd(rd),
@@ -59,7 +56,6 @@ module tb;
 			.mem_byte(mem_byte),
 			.mem_halfword(mem_halfword),
 			.mem_read(mem_read),
-			.mem_ex_sel(mem_ex_sel),
 			.mem_unsigned(mem_unsigned),
 			.alu_op(alu_op),
 			.imm(imm),

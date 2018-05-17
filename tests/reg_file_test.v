@@ -13,8 +13,8 @@ module tb;
 	wire [31:0] wdata_rd;
 	wire we;
 
-	clkgen        clkg   (  .clk(clk)); 
-	register_file regfile(
+	clkgen        CLK      (  .clk(clk)); 
+	register_file REG_FILE (
 				.clk(clk),
 				.raddr_rs1(raddr_rs1),
 				.raddr_rs2(raddr_rs2),
@@ -23,7 +23,7 @@ module tb;
 				.we(we),
 				.rdata_rs1(rdata_rs1),
 				.rdata_rs2(rdata_rs2));
-	testbench test       (
+	testbench     TEST    (
 				.clk(clk),
 				.data_rs1(rdata_rs1),
 				.data_rs2(rdata_rs2),			

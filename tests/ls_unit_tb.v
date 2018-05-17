@@ -32,6 +32,8 @@ module testbench(
 				$display("instruction = %h", instruction);
 				#20;
 			end
+			$dumpfile("test.vcd");
+			$dumpvars(0,TEST);
 			$finish;
 		end 
 endmodule

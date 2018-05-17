@@ -370,7 +370,10 @@ module testbench (
 		$display("branch_op     = %b", branch_op);
 		$display("jump_op       = %b", jump_op);
 		$display("break_op      = %b", break_op);
-	
+		
+		$dumpfile("test.vcd");
+		$dumpvars(0,test);	
+		
 		$finish; 
 	   end 
 endmodule 	   

@@ -7,6 +7,6 @@ module pc_reg(
 	        output reg [31:0] pc_o); 
 
 	always @(posedge clk_i) begin
-		pc_o <= ((rst_i)? (32'h00000000): ((stall)? pc_o : pc_i));
+		pc_o <= ((rst_i)? (32'h00000000): pc_i);
 	end	
 endmodule 

@@ -10,6 +10,8 @@ module testbench(
 		 output reg [31:0] write_data_rd ); 
 
 	 initial begin 
+		$dumpfile("reg_file.vcd");
+		$dumpvars(0,REG_FILE);
 		//test for register x0 
 		//testing read
 		read_addr_rs1 <= 5'd0; 
