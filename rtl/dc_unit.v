@@ -27,7 +27,8 @@ module decoder (
 		output branch_op,
 		output jump_op,
 		output jalr_op,
-		output break_op 	); 
+		output break_op,
+		output [2:0] csr_op); 
 	
 		wire regw;	
 		wire [6:0] opcode;
@@ -72,7 +73,7 @@ module decoder (
 		reg call, break, ret;
 		reg is_b, is_imm, is_st, is_unsigned, is_ld;
 		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt; 
-		reg is_wr, is_alu, is_immop, is_ldu, is_bu, is_j;
+		reg is_wr, is_alu, is_immop, is_ldu, is_bu, is_j, is_csr, is_csri;
 		//DECODE INSTRUCTION
 		always @(*) begin
 			//
@@ -131,10 +132,11 @@ module decoder (
 			break	= opcode == `sp_op  && inst[31:7]  == `break; 
 			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
+			is_crs      = |{rw,rs,rc, rwi, rsi, rci}; 
+			is_crsi	    = |{rwi, rsi, rci}; 
 			is_j	    = |{jal,jalr};
 			is_unsigned = |{sltu,sltiu,bgeu,bltu};
 			is_ldu	    = |{lbu,lhu};//loads operations with unsigned operations
-			is_bu	    = |{bgeu,bltu};
 			is_b        = |{beq,bne,blt,bge,bgeu,bltu}; //branch operations flag
 			is_alu	    = |{add,sub,slt,sltu,_xor,_or,_and,sll,srl,sra}; //alu operations flag
 			is_st	    = |{sb, sh, sw}; //store operation flags
@@ -162,6 +164,7 @@ module decoder (
 			is_b 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
 			is_imm 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
 			is_st		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
+			is_csri		: imm <= { 27'b0, inst[19:15]};
 			endcase
 		end 
 		
@@ -170,7 +173,7 @@ module decoder (
 		assign mem_r  	    = is_ld;
 		assign mem_b	    = |{lb,lbu,sb};
 		assign mem_hw  	    = |{lh,lhu,sh}; 
-		assign mem_ex_s     = is_ld; 
+		assign mem_ex_s     = |{is_ld,is_st}; 
 		assign syscall_op   = call; 
 	        assign break_op     = break;
 		assign jump_op      = is_j;
@@ -178,15 +181,18 @@ module decoder (
 		assign reg_write    = is_wr;
 		assign mem_unsigned = is_ldu;
 		assign jalr_op      = jalr;
+		assign csr_op	    = {rc, rs, rw}; 
+
 		//COMPARATOR OP
 		
 		always @(*) begin
 			case(1'b1)
-				is_bu: comparator_op <= 3'b110;
 				beq  : comparator_op <= 3'b001;
 				bne  : comparator_op <= 3'b010;
 				blt  : comparator_op <= 3'b011;
 				bge  : comparator_op <= 3'b100;
+				bltu : comparator_op <= 3'b101;
+				bgeu : comparator_op <= 3'b110;
 				default: comparator_op <= 3'b0;
 			endcase
 		end
