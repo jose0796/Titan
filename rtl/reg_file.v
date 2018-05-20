@@ -10,6 +10,10 @@ module register_file(
 			output [31:0] rdata_rs2); 
 
 		reg [31:0] reg_file[31:0]; 
+		initial begin
+			reg_file[14] = 32'd2;
+			reg_file[18] = 32'd4;
+		end
 
 		// READ PROCEDURE (COMBINATIONAL)
 		assign rdata_rs1 = (raddr_rs1 == 5'd0) ? 32'd0 : reg_file[raddr_rs1]; 

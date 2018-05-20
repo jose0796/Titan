@@ -12,14 +12,16 @@ module decoder (
 		output reg_write,
 		output reg [2:0] comparator_op,
 		//MEM STAGE CONTROL SIGNALS
-		output mem_write,
+		output [5:0] mem_flags,
+		output mem_ex_sel,
+/*		output mem_write,
 		output mem_byte,
 		output mem_halfword,
 		output mem_read,
 		output mem_ex_sel,
-		output mem_unsigned,
+		output mem_unsigned,*/
 		//EX STAGE CONTROL SIGNALS
-		output reg [2:0] alu_op, 	
+		output reg [4:0] alu_op, 	
 		output reg [31:0] imm,
 		output reg portb_sel,
 		output reg porta_sel,
@@ -28,36 +30,49 @@ module decoder (
 		output jump_op,
 		output jalr_op,
 		output break_op,
+		output csr_imm_op,
 		output [2:0] csr_op); 
 	
-		wire regw;	
 		wire [6:0] opcode;
-		wire rf_we; 
+		wire [2:0] mem_access; 
 		wire mem_wr;
 		wire mem_b;
 		wire mem_hw;
 		wire mem_r;
 		wire mem_ex_s;
+		wire mem_unsigned;
 		wire [31:0] inst;
 		wire [2:0] func3;
 		wire [6:0] func7;
 
 
 		//ASSIGNMENTS
-		assign inst 	 = instruction[31:0];
-		assign opcode 	 = instruction[6:0];
-		assign func3 	 = instruction[14:12]; 
-		assign func7 	 = instruction[31:25]; 
+		assign inst 		= instruction[31:0];
+		assign opcode 	 	= instruction[6:0];
+		assign func3 		= instruction[14:12]; 
+		assign func7 	 	= instruction[31:25]; 
+		//+- ID STAGE ASSIGNMENTS 
+		assign jalr_op      	= jalr;
+		assign jump_op      	= is_j;
+		assign branch_op    	= is_b; 	
 		//+- EX STAGE ASSIGNMENTS
-		assign rs1 	 = (lui)? 5'b0 : instruction[19:15]; 
-		assign rs2 	 = instruction[24:20];
-		assign rd  	 = instruction[11:7]; 
+		assign rs1 	    	= (lui)? 5'b0 : instruction[19:15]; 
+		assign rs2 	    	= instruction[24:20];
+		assign rd  	    	= instruction[11:7]; 
+		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
+	        assign break_op     	= break;
+		assign syscall_op   	= call; 
 		//+- MEM STAGE ASSIGMENTS
-		assign mem_write = mem_wr;
+		assign mem_flags    	= {mem_wr,mem_r,mem_access,mem_unsigned};
+		assign mem_ex_sel  	= mem_ex_s;
+		//+- WB STAGE ASSIGMENTS
+		assign csr_imm_op   	= is_csri; 	 
+		assign csr_op	    	= {rc, rs, rw}; 
+/*		assign mem_write = mem_wr;
 		assign mem_byte  = mem_b; 
 		assign mem_halfword = mem_hw;
 		assign mem_read  = mem_r;
-		assign mem_ex_sel= mem_ex_s;
+		assign mem_ex_sel= mem_ex_s;*/
 		
 		//TYPES OF INSTRUCTIONS
 		reg lui,auipc;
@@ -71,9 +86,12 @@ module decoder (
 		reg nop;
 		reg rw, rs, rc, rwi, rsi, rci;
 		reg call, break, ret;
-		reg is_b, is_imm, is_st, is_unsigned, is_ld;
-		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt; 
-		reg is_wr, is_alu, is_immop, is_ldu, is_bu, is_j, is_csr, is_csri;
+
+		reg is_b, is_imm, is_st, is_ld;//flags for immediate generation
+		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt, is_sltu; //arithmetic operations flags
+		reg is_wr, is_alu, is_immop, is_ldu, is_bu, is_j, is_csr, is_csri; //external flags
+		reg is_word,is_byte,is_hw; 
+		
 		//DECODE INSTRUCTION
 		always @(*) begin
 			//
@@ -132,23 +150,31 @@ module decoder (
 			break	= opcode == `sp_op  && inst[31:7]  == `break; 
 			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
-			is_crs      = |{rw,rs,rc, rwi, rsi, rci}; 
-			is_crsi	    = |{rwi, rsi, rci}; 
+			//---mem flags------
+			is_word     = |{lw,sw};
+			is_hw	    = |{lh,lhu,sh};
+			is_byte     = |{lb,lbu,sb};
+
+			is_csr      = |{rw,rs,rc, rwi, rsi, rci}; 
+			is_csri	    = |{rwi, rsi, rci}; 
+			is_ldu	    = |{lbu,lhu};
+			//---IMM FLAGS FOR DECODING
 			is_j	    = |{jal,jalr};
-			is_unsigned = |{sltu,sltiu,bgeu,bltu};
-			is_ldu	    = |{lbu,lhu};//loads operations with unsigned operations
-			is_b        = |{beq,bne,blt,bge,bgeu,bltu}; //branch operations flag
-			is_alu	    = |{add,sub,slt,sltu,_xor,_or,_and,sll,srl,sra}; //alu operations flag
 			is_st	    = |{sb, sh, sw}; //store operation flags
+			is_b	    = |{beq,bne,blt,bge,bltu,bgeu};
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; //loads operation flag 
 			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori, is_ld, jalr}; //immediates operations excluding store
+			//--Arithmetic operations 
 			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; //add operation flag
-			is_sub	    = |{sub,is_b}; //sub operation flag
+			is_sub	    = |{sub}; //sub operation flag
 			is_xor	    = |{_xor,xori};//xor operation flag
 			is_and	    = |{_and,andi}; //and operation flag
 			is_or	    = |{_or,ori}; //or operation flag
 			is_sll      = |{sll, slli}; //shift left operations flag
 			is_sr	    = |{sra, srl, srai, srli}; //shift rights operations flag
+			is_slt      = |{slt,slti};
+			is_sltu     = |{sltu, sltiu};
+			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr}; 
 			is_immop    = |{addi,slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc}; //operation uses immediates? 
 			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui}; //determines if operations is going to write 
 			
@@ -168,20 +194,12 @@ module decoder (
 			endcase
 		end 
 		
-		//CONTROL SIGNALS 
+		//MEMORY CONTROL SIGNALS 
 		assign mem_wr 	    = is_st; 
 		assign mem_r  	    = is_ld;
-		assign mem_b	    = |{lb,lbu,sb};
-		assign mem_hw  	    = |{lh,lhu,sh}; 
+	        assign mem_access   = {is_word,is_hw,is_byte};	
 		assign mem_ex_s     = |{is_ld,is_st}; 
-		assign syscall_op   = call; 
-	        assign break_op     = break;
-		assign jump_op      = is_j;
-		assign branch_op    = is_b; 
-		assign reg_write    = is_wr;
 		assign mem_unsigned = is_ldu;
-		assign jalr_op      = jalr;
-		assign csr_op	    = {rc, rs, rw}; 
 
 		//COMPARATOR OP
 		
@@ -200,14 +218,23 @@ module decoder (
 		//ALU_OP
 		
 		always @(*) begin
-			case(1'b1) 
-				is_add : alu_op <= 3'b000; 
-				is_sub : alu_op <= 3'b001;
-				is_and : alu_op <= 3'b010;
-				is_or  : alu_op <= 3'b011;
-				is_xor : alu_op <= 3'b100;
-				is_sll : alu_op <= 3'b101;
-				is_sr  : alu_op <= ((sra && srai)? 3'b110 : 3'b111);
+			case(1'b1)
+				is_add : alu_op <= 5'b00000; 
+				is_sub : alu_op <= 5'b00001;
+				is_and : alu_op <= 5'b00010;
+				is_or  : alu_op <= 5'b00011;
+				is_xor : alu_op <= 5'b00100;
+				is_sll : alu_op <= 5'b00101;
+				is_sr  : alu_op <= ((sra || srai)? 5'b00110 : 5'b00111);
+				is_slt : alu_op <= 5'b01000;
+				is_sltu: alu_op <= 5'b01001;
+				beq    : alu_op <= 5'b01010;
+				bne    : alu_op <= 5'b01011;
+				blt    : alu_op <= 5'b01100;
+				bge    : alu_op <= 5'b01101;
+				bltu   : alu_op <= 5'b01110;
+				bgeu   : alu_op <= 5'b01111;
+			        default: alu_op <= 5'b11111;	
 			endcase
 		end 
 

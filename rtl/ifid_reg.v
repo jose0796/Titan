@@ -13,8 +13,8 @@ module ifid_register (
 
 		
 		always 	@(posedge clk) begin
-			pc_o   <= ((rst) ? 32'b0 :  pc_i);  
-			inst_o <= ((rst) ? 32'b0 : inst_i ); 
+			pc_o   <= ((rst) ? 32'b0 :((stall)? pc_o: pc_i));  
+			inst_o <= ((rst) ? 32'h33 :((stall)? inst_o: inst_i)); 
 			ready_o <= (ready_i);
 		end
 endmodule
