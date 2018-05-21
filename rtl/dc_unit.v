@@ -21,7 +21,7 @@ module decoder (
 		output mem_ex_sel,
 		output mem_unsigned,*/
 		//EX STAGE CONTROL SIGNALS
-		output reg [4:0] alu_op, 	
+		output reg [3:0] alu_op, 	
 		output reg [31:0] imm,
 		output reg portb_sel,
 		output reg porta_sel,
@@ -219,22 +219,22 @@ module decoder (
 		
 		always @(*) begin
 			case(1'b1)
-				is_add : alu_op <= 5'b00000; 
-				is_sub : alu_op <= 5'b00001;
-				is_and : alu_op <= 5'b00010;
-				is_or  : alu_op <= 5'b00011;
-				is_xor : alu_op <= 5'b00100;
-				is_sll : alu_op <= 5'b00101;
-				is_sr  : alu_op <= ((sra || srai)? 5'b00110 : 5'b00111);
-				is_slt : alu_op <= 5'b01000;
-				is_sltu: alu_op <= 5'b01001;
-				beq    : alu_op <= 5'b01010;
+				is_add : alu_op <= 4'b0000; 
+				is_sub : alu_op <= 4'b0001;
+				is_and : alu_op <= 4'b0010;
+				is_or  : alu_op <= 4'b0011;
+				is_xor : alu_op <= 4'b0100;
+				is_sll : alu_op <= 4'b0101;
+				is_sr  : alu_op <= ((sra || srai)? 4'b0110 : 4'b0111);
+				is_slt : alu_op <= 4'b1000;
+				is_sltu: alu_op <= 4'b1001;
+			/*	beq    : alu_op <= 5'b01010;
 				bne    : alu_op <= 5'b01011;
 				blt    : alu_op <= 5'b01100;
 				bge    : alu_op <= 5'b01101;
 				bltu   : alu_op <= 5'b01110;
-				bgeu   : alu_op <= 5'b01111;
-			        default: alu_op <= 5'b11111;	
+				bgeu   : alu_op <= 5'b01111;*/
+			        default: alu_op <= 4'b1111;	
 			endcase
 		end 
 

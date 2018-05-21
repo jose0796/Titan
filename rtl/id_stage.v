@@ -2,6 +2,7 @@
 `include "rtl/dc_unit.v"
 `include "rtl/def.v"
 `include "rtl/reg_file.v"
+`include "rtl/comparator.v"
 
 module id_stage(
 		 input clk,
@@ -19,7 +20,7 @@ module id_stage(
 		 output [31:0] pc_jump_address,
 		 output [31:0] port_a,
 		 output [31:0] port_b,
-		 output [ 4:0] alu_op,
+		 output [ 3:0] alu_op,
 		 output [ 4:0] waddr,
 		 output we,
 		 output [ 5:0] mem_flags,
@@ -28,6 +29,7 @@ module id_stage(
 		 output bad_jump_addr,
 		 output branch_op,
 		 output bad_branch_addr, 
+		 output take_branch,
 		 output break_op,
 		 output syscall_op,
 	 	 output [2:0] csr_op,
@@ -84,7 +86,12 @@ module id_stage(
 			.in_1(forwardB),
 			.sel(forward_sel),
 			.out(muxb_i) ); 
-
+	
+	branch_predictor BP (
+			.sel(comparator_op),
+			.drs1(muxa_i),
+			.drs2(muxb_i),
+			.take_branch(take_branch));
 
 	register_file RF  (
 			.clk(clk),

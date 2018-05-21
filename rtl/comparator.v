@@ -30,7 +30,7 @@ module branch_predictor (
 			bge  : take_branch <= (sdrs1 >= sdrs2);
 			bltu : take_branch <= (udrs1 <  udrs2); 
 			bgeu : take_branch <= (udrs1 >= udrs2); 
-			default  : take_branch <= 1'bx;
+			default  : take_branch <= 1'b0;
 		endcase
 	end 
 endmodule
