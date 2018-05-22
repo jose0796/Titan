@@ -15,7 +15,6 @@ module load_store_unit (
 			output reg        isel_o,
 			output reg        icyc_o,
 			output reg        istb_o,
-			output reg        iwe_o,
 			output reg 	  if_stall,
 			output reg	  ready,
 			output reg 	  inst_misaligned,
@@ -62,16 +61,19 @@ module load_store_unit (
 		reg [63:0]  no_rps = nrps; 
 	       	reg [1:0]  i_state;
 	        reg [1:0]  d_state;	
-
+		reg 	   if_stall_aux;
 
 		always @(*) inst_misaligned <= ~(pc[1:0] == 0); 
 
 		initial begin
 			idat_o  <= 32'hx; 
 			isel_o  <= 1'bx; 
-			iwe_o   <= 1'b0;
 			no_mem  <= 1'b1;
 		end
+
+		always @(*) if_stall <= ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
+		always @(posedge iack_i) instruction <= idat_i;
+
 		//INSTRUCTION FETCHING PROCESS	
 		always @(posedge clk) begin
 			if (rst) begin 
@@ -88,14 +90,14 @@ module load_store_unit (
 
 			end else begin
 				ready 	 <= ((ready)? 1'b0:((iack_i)? 1'b1: 1'b0));
-				if_stall <= ((if_stall)? ((iack_i| ierr_i)? 1'b0: 1'b1): 1'b1);
+				if_stall_aux <= iack_i;
 				case (i_state)
 					i_str: begin
 						icyc_o  <= pc[1:0] == 0;
 						iaddr_o <= pc;
 						istb_o  <= pc[1:0] == 0;
 						if(iack_i) begin 
-							instruction <= idat_i;
+							//instruction <= idat_i;
 							icyc_o <= 1'b0;
 							istb_o <= 1'b0;
 							i_state <= i_str;

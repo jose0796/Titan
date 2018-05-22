@@ -28,6 +28,8 @@ module bram(
 			memory[20] = 32'h000900e7;
 		end
 
+		always @(*) if (~(icyc_i & istb_i)) iack_o <= 1'b0;
+
 		always @(posedge clk) begin
 			if (rst) begin
 				idat_o <= 32'bx;
