@@ -7,6 +7,7 @@
 `include "rtl/bram.v"
 
 module if_stage (
+		output clk,
 		input  rst_i,
 		input  pc_branch_address,
 		input  pc_jump_address,
@@ -16,7 +17,6 @@ module if_stage (
 		output exc_addr_o,
 		output id_ready_o			); 
 
-	wire clk; 
 	wire [31:0] if_pc_mux; 
 	wire 	    if_stall;
 	wire [31:0] if_pc_o;

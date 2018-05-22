@@ -7,7 +7,7 @@ module testbench(
 
 	 initial begin
 		$dumpfile("pc_test.vcd");
-		$dumpvars(0,PC_REG);
+		$dumpvars(0,PC_REG,PC_ADD, PC_SOURCE);
 		 rst_o = 1; 
 		 repeat(5)  
 		 	@(posedge clk_i) #1; 
