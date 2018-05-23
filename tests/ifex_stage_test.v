@@ -1,7 +1,9 @@
 `timescale 1ns/1ps
 `include "rtl/if_stage.v"
-`include "tests/ifid_stage_tb.v"
+`include "tests/ifex_stage_tb.v"
 `include "rtl/id_stage.v"
+`include "rtl/ex_stage.v"
+
 module tb;
 	wire clk;
 	wire rst;
@@ -11,7 +13,7 @@ module tb;
 	wire [31:0] id_instruction;
 	wire id_exc_addr;
 	wire id_ready;
-	wire exc_addr_if;
+	
 	wire forward_sel; 
 	wire [31:0] pc_branch_address;
 	wire [31:0] pc_jump_address;
@@ -32,8 +34,19 @@ module tb;
 	wire [2:0] ex_csr_op;
 	wire ex_csr_imm_op;
 	wire ex_exc_addr_if_o;
+	wire ex_stall;
+	wire [31:0] mem_result;
+	wire [ 4:0] mem_waddr;
+	wire 	    mem_we;
+	wire [ 5:0] mem_flags;
+	wire 	    mem_ex_sel;
+	wire [ 2:0] mem_csr_op;
+	wire 	    mem_csr_imm_op;
+	wire 	    mem_exc_addr_if;
+
 
 	assign forward_sel = 1'b0;
+	assign ex_stall    = 1'b0;
 
 	if_stage IF(
 			.clk(clk),
@@ -72,6 +85,29 @@ module tb;
 			.ex_csr_op(ex_csr_op),
 			.ex_csr_imm_op(ex_csr_imm_op),
 	       		.ex_exc_addr_if(ex_exc_addr_if)	);
+	ex_stage EX(
+			.clk(clk),
+			.rst(rst),
+			.ex_stall(ex_stall),
+			.port_a(ex_port_a),
+			.port_b(ex_port_b),
+			.alu_op(ex_alu_op),
+			.waddr_i(ex_waddr),
+			.we_i(ex_we),
+			.mem_flags_i(ex_mem_flags),
+			.mem_ex_sel_i(ex_mem_ex_sel),
+			.csr_op_i(ex_csr_op),
+			.csr_imm_op_i(ex_csr_imm_op),
+			.exc_addr_if_i(ex_exc_addr_if),
+			.result_o(mem_result),
+			.waddr_o(mem_waddr),
+			.we_o(mem_we),
+			.mem_flags_o(mem_flags),
+			.mem_ex_sel_o(mem_ex_sel),
+			.csr_op_o(mem_csr_op),
+			.csr_imm_op_o(mem_csr_imm_op),
+			.exc_addr_if_o(mem_exc_addr_if) );
+
 	
 	test	TB(	.rst(rst) );
 endmodule

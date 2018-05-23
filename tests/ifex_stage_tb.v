@@ -2,8 +2,8 @@
 module test( output reg rst ); 
 
 	initial begin
-		$dumpfile("ifid_stage.vcd"); 
-		$dumpvars(0,ID,IF); 
+		$dumpfile("ifex_stage.vcd"); 
+		$dumpvars(0,ID,IF,EX); 
 		rst <= 1;
 		#200
 		rst <= 0;

@@ -1,11 +1,9 @@
 
 module exu (
-	 	input 	[31:0] port_a,
-		input	[31:0] port_b,
-		input 	[ 5:0] alu_op,
-		input	break_op,
-		input 	syscall_op,
-		output reg result 	); 
+	 	input 	   [31:0] port_a,
+		input	   [31:0] port_b,
+		input      [ 3:0] alu_op,
+		output reg [31:0]  result 	); 
 
 	wire signed   [31:0] sa;
 	wire unsigned [31:0] a;
@@ -22,9 +20,9 @@ module exu (
 		case(alu_op) 
 			4'h0: 	 result <= (a + b);
 			4'h1: 	 result <= (a - b);
-			4'h2: 	 result <= (a & s);
+			4'h2: 	 result <= (a & b);
 			4'h3: 	 result <= (a | b);
-			4'h4: 	 result <= (a ^ s); 
+			4'h4: 	 result <= (a ^ b); 
 			4'h5: 	 result <= (a << b);
 			4'h6: 	 result <= (sa >> b);
 			4'h7: 	 result <= (a >> b);
@@ -33,3 +31,4 @@ module exu (
 			default: result <= 32'b0;
 		endcase
 	end
+endmodule

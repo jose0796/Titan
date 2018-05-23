@@ -77,15 +77,15 @@ module if_stage (
 				.clk(clk),
 				.rst(rst_i),
 				.stall(if_stall),
-				.pc_i(if_pc_o),
-				.pc_add4_i(if_pc_add4),
-				.exc_addr_i(exc_addr_o),
-				.inst_i(if_instruction_o),
-				.pc_o(id_pc_o),
-				.pc_add4_o(id_pc_add4),
-				.inst_o(id_instruction_o),
-				.exc_addr_o(id_exc_addr_o), 
-				.ready_o(id_ready_o) ); 
+				.if_pc(if_pc_o),
+				.if_pc_add4(if_pc_add4),
+				.if_exc_addr(exc_addr_o),
+				.if_inst(if_instruction_o),
+				.id_pc(id_pc_o),
+				.id_pc_add4(id_pc_add4),
+				.id_inst(id_instruction_o),
+				.id_exc_addr(id_exc_addr_o), 
+				.id_ready(id_ready_o) ); 
 endmodule 	
 		
 	
