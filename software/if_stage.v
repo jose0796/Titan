@@ -1,10 +1,10 @@
-`include "rtl/clk_gen.v"
-`include "rtl/pc_reg.v"
-`include "rtl/pc_source.v"
-`include "rtl/pc_add.v"
-`include "rtl/ls_unit.v"
-`include "rtl/ifid_reg.v"
-`include "rtl/bram.v"
+`include "software/clk_gen.v"
+`include "software/pc_reg.v"
+`include "software/pc_source.v"
+`include "software/pc_add.v"
+`include "software/ls_unit.v"
+`include "software/ifid_reg.v"
+`include "software/bram.v"
 
 module if_stage (
 		output clk,

@@ -1,6 +1,6 @@
-`include "./rtl/clk_gen.v"
+`include "./software/clk_gen.v"
 `include "./tests/reg_file_tb.v"
-`include "./rtl/reg_file.v"
+`include "./software/reg_file.v"
 
 module tb;
 

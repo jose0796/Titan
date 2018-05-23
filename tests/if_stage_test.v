@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "rtl/if_stage.v"
+`include "software/if_stage.v"
 `include "tests/if_stage_tb2.v"
 
 module tb;

@@ -1,5 +1,5 @@
 `include "./tests/dc_unit_tb.v"
-`include "./rtl/dc_unit.v"
+`include "./software/dc_unit.v"
 
 module tb; 
 	wire [31:0] pc;

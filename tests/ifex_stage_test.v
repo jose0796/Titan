@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
-`include "rtl/if_stage.v"
+`include "software/if_stage.v"
 `include "tests/ifex_stage_tb.v"
-`include "rtl/id_stage.v"
-`include "rtl/ex_stage.v"
+`include "software/id_stage.v"
+`include "software/ex_stage.v"
 
 module tb;
 	wire clk;

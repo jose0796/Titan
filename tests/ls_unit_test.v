@@ -1,10 +1,10 @@
-`include "./rtl/ls_unit.v"
+`include "./software/ls_unit.v"
 `include "./tests/ls_unit_tb.v"
-`include "./rtl/clk_gen.v"
-`include "./rtl/bram.v"
-`include "./rtl/pc_source.v"
-`include "./rtl/pc_add.v"
-`include "./rtl/pc_reg.v"
+`include "./software/clk_gen.v"
+`include "./software/bram.v"
+`include "./software/pc_source.v"
+`include "./software/pc_add.v"
+`include "./software/pc_reg.v"
 
 module tb; 
 

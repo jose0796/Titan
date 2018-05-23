@@ -1,9 +1,9 @@
-`include "rtl/mux21.v"
-`include "rtl/dc_unit.v"
-`include "rtl/def.v"
-`include "rtl/reg_file.v"
-`include "rtl/comparator.v"
-`include "rtl/idex_register.v"
+`include "software/mux21.v"
+`include "software/dc_unit.v"
+`include "software/def.v"
+`include "software/reg_file.v"
+`include "software/comparator.v"
+`include "software/idex_register.v"
 
 module id_stage(
 		 input clk,

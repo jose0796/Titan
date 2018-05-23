@@ -1,5 +1,5 @@
-`include "rtl/exu.v"
-`include "rtl/exmem_register.v"
+`include "software/exu.v"
+`include "software/exmem_register.v"
 
 module ex_stage (
 		 input 		clk,
