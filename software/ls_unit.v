@@ -139,7 +139,7 @@ module load_store_unit (
 			if (rst) begin 
 				ddat_o    <= 32'hx; 
 				daddr_o   <= 32'hx;
-				dsel_o    <= 1'b0; 
+				dsel_o    <= 4'hf; 
 				dwe_o     <= 1'b0; 
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
@@ -149,17 +149,18 @@ module load_store_unit (
 				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i)? 1'b0: 1'b1)); 
 				case(d_state)
 					d_str: begin
-						dcyc_o <= (|{mread,mwrite})? 1'b1: 1'b0;
-						dstb_o <= (|{mread,mwrite})? 1'b1: 1'b0;
+						dcyc_o <= (^{mread,mwrite})? 1'b1: 1'b0;
+						dstb_o <= (^{mread,mwrite})? 1'b1: 1'b0;
 						dwe_o  <= ((mwrite)? 1'b1: 1'b0); 
 						daddr_o <= maddr_i;
-						d_state <=((mwrite)? d_tx:((mread)? d_rx: d_str)); 
+						d_state <=(^{mread,mwrite})? d_rx : d_str; 
 					end 
 					d_rx: begin //load state
 						if(dack_i) begin
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
 							rdata  	<= ddat_i;
+							ddat_o  <= wdata;
 							d_state <= d_str;
 						end else if(derr_i) begin
 							mem_bus_err <= 1'b1;
@@ -168,19 +169,6 @@ module load_store_unit (
 							dstb_o <= 1'b0;
 						end
 					end
-					d_tx: begin //store state 
-						if(dack_i) begin
-							dcyc_o <= 1'b0;
-							dstb_o <= 1'b0;
-							ddat_o <= wdata;
-							d_state <= d_str;
-						end else if(derr_i) begin
-							mem_bus_err <= 1'b1;
-							d_state <= d_err;
-							dcyc_o  <= 1'b0;
-							dstb_o  <= 1'b0;
-						end
-					end 
 					d_err:begin
 					       mem_bus_err <= 1'b0;
 				       	       dcyc_o      <= 1'b0;
@@ -200,16 +188,16 @@ module load_store_unit (
 			case(1'b1)
 				mread: begin
 					case(1'b1)
-						mbyte	: data_o <= {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+						mbyte	: data_o <= {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]};
 						mhw  	: data_o <= {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
 						default	: data_o <= rdata;
 					endcase
 				end
 				mwrite: begin
 					case(1'b1) 
-						mbyte	: wdata  <= mdat_i[7:0];
-						mhw  	: wdata  <= mdat_i[15:0];
-						default	: wdata  <= mdat_i; 
+						mbyte	: begin wdata  <= mdat_i[7:0];  dsel_o <= 4'h1; end
+						mhw  	: begin wdata  <= mdat_i[15:0]; dsel_o <= 4'h3; end
+						default	: begin wdata  <= mdat_i[31:0]; dsel_o <= 4'hf; end
 					endcase
 				end
 			endcase

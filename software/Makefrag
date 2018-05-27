@@ -1,0 +1,12 @@
+
+modules = \
+	dc_unit \
+	exu \
+	if_stage \
+	id_stage \			
+	ex_stage \
+ 	ls_unit \
+	pc_reg \
+	reg_file \
+		
+

@@ -20,12 +20,17 @@ module bram(
 		localparam b_tx  = 1'b1; 
 
 		initial begin
-			memory[0]  = 32'h00412083;
+			memory[0]  = 32'h00001297;
+			memory[4]  = 32'h00b57063;
+			memory[8]  = 32'h00112223;
+			memory[12] = 32'h00412083;
+			memory[16] = 32'h3002a073;
+/*			memory[0]  = 32'h00000093;
 			memory[4]  = 32'h00000113;
 			memory[8]  = 32'h00000193;
 			memory[12] = 32'h00000213;
 			memory[16] = 32'h00000293;
-			memory[20] = 32'h00000313;
+			memory[20] = 32'h00000313;*/
 		/*	memory[0]  = 32'hfff70713;
 			memory[4]  = 32'h0016f793;
 			memory[8]  = 32'h0001e2b7;
