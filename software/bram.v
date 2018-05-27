@@ -11,8 +11,7 @@ module bram(
 		output reg [31:0] idat_o,
 		output reg        iack_o,
 		output reg        ierr_o ); 
-
-
+		
 		reg [31:0] memory [31:0]; 
 
 		reg b_state;
@@ -39,7 +38,7 @@ module bram(
 			memory[20] = 32'h000900e7;*/
 		end
 
-		always @(*) if (~(icyc_i & istb_i)) iack_o <= 1'b0;
+		always @(*) if (~(icyc_i & istb_i)) iack_o = 1'b0;
 
 		always @(posedge clk) begin
 			if (rst) begin
@@ -52,7 +51,7 @@ module bram(
 					b_str: begin
 						iack_o <= 1'b0;
 						if( icyc_i && istb_i) begin
-							iack_o 	<= 1'b1;
+							iack_o	<= 1'b1;
 							idat_o 	<= memory[iaddr_i]; 
 							b_state <= b_str; 
 						end 

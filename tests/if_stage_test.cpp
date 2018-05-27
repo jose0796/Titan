@@ -14,12 +14,21 @@
 #define ERROR_COLOR "\033[0;31m"
 #define NO_COLOR    "\033[m"
 
-#define PA      0
-#define PB      1
-#define ALU_OP  2
-#define OUT     3
+#define PC_BA  0
+#define PC_JA  1
+#define PC_SEL 0
+#define INST   1
+#define PC_O   2
+#define PC_ADD4 3
 
-#define TOTAL_TESTS 24
+#define INST_1 0x00001297
+#define INST_2 0x00b57063
+#define INST_3 0x00112223
+#define INST_4 0x00412083
+#define INST_5 0x3002a073
+#define INST_6 0x00412083
+
+#define TOTAL_TESTS 5
 
 
 using namespace std;
@@ -33,19 +42,26 @@ class SIMULATIONTB: public Testbench<Vif_stage> {
     int Simulate(unsigned long max_time=1000000){
       Reset();
 
-      //|  pc_ba | pc_ja | id_instruction | id_pc | id_pc_add4 |
-      int data[TOTAL_TESTS][2] = {                      //           									
-	 {     0 |}
+      int instruction [TOTAL_TESTS]{ INST_1, INST_2, INST_3, INST_4, INST_5};
+
+      //  pc_sel | id_inst    | id_pc | id_pc_add4
+      int data[TOTAL_TESTS][4] = {                      //           									
+	 {       0,	INST_1,	     0,           4},			//pc = pc + 4
+	 {	 0,     INST_2,	     4,		  8},			
+	 {	 0,	INST_3,	     8, 	  0xc},
+	 {	 0,	INST_4,	     0xc,	  0x10},
+	 {	 0,	INST_5,	     0x10,	  0x14}};
+
       int num_test;
       for (num_test = 0; num_test < TOTAL_TESTS; num_test++) {
-        m_core->port_a = data[num_test][PA];
-        m_core->port_b = data[num_test][PB];
-        m_core->alu_op  = data[num_test][ALU_OP] ;
+        m_core->pc_sel            = data[num_test][PC_SEL];
 
         Tick();
 
-        if((m_core->result != data[num_test][OUT]))
-          return num_test;
+	while(!m_core->id_ready_o) Tick(); 
+
+	if ( m_core->id_instruction_o != data[num_test][INST] || m_core->id_pc_add4 != data[num_test][PC_ADD4] ||m_core->id_pc_o != data[num_test][PC_O] )
+		return num_test;
       }
       return num_test;
     }
@@ -55,11 +71,11 @@ class SIMULATIONTB: public Testbench<Vif_stage> {
 int main(int argc, char **argv, char **env) {
   std::unique_ptr<SIMULATIONTB> tb(new SIMULATIONTB());
 
-  tb->OpenTrace("exu_test.vcd");
+  tb->OpenTrace("if_stage_test.vcd");
 
   int ret = tb->Simulate();
 
-  printf("\nEXU Testbench:\n");
+  printf("\nIF STAGE Testbench:\n");
 
   if(ret == TOTAL_TESTS)
     printf(OK_COLOR " Test Passed! " NO_COLOR);

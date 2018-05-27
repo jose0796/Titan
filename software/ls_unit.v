@@ -63,16 +63,16 @@ module load_store_unit (
 	        reg [1:0]  d_state;	
 		reg 	   if_stall_aux;
 
-		always @(*) inst_misaligned <= ~(pc[1:0] == 0); 
+		always @(*) inst_misaligned = ~(pc[1:0] == 0); 
 
 		initial begin
-			idat_o  <= 32'hx; 
-			isel_o  <= 1'bx; 
-			no_mem  <= 1'b1;
+			idat_o  = 32'hx; 
+			isel_o  = 1'bx; 
+			no_mem  = 1'b1;
 		end
 
-		always @(*) if_stall <= ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
-		always @(posedge iack_i) instruction <= idat_i;
+		always @(*) if_stall = ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
+		always @(posedge iack_i) instruction = idat_i;
 
 		//INSTRUCTION FETCHING PROCESS	
 		always @(posedge clk) begin
@@ -139,7 +139,7 @@ module load_store_unit (
 			if (rst) begin 
 				ddat_o    <= 32'hx; 
 				daddr_o   <= 32'hx;
-				dsel_o    <= 4'hf; 
+				dsel_o    = 4'hf; 
 				dwe_o     <= 1'b0; 
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
@@ -188,16 +188,16 @@ module load_store_unit (
 			case(1'b1)
 				mread: begin
 					case(1'b1)
-						mbyte	: data_o <= {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]};
-						mhw  	: data_o <= {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
-						default	: data_o <= rdata;
+						mbyte	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]};
+						mhw  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+						default	: data_o = rdata;
 					endcase
 				end
 				mwrite: begin
 					case(1'b1) 
-						mbyte	: begin wdata  <= mdat_i[7:0];  dsel_o <= 4'h1; end
-						mhw  	: begin wdata  <= mdat_i[15:0]; dsel_o <= 4'h3; end
-						default	: begin wdata  <= mdat_i[31:0]; dsel_o <= 4'hf; end
+						mbyte	: begin wdata  = mdat_i[7:0];  dsel_o = 4'h1; end
+						mhw  	: begin wdata  = mdat_i[15:0]; dsel_o = 4'h3; end
+						default	: begin wdata  = mdat_i[31:0]; dsel_o = 4'hf; end
 					endcase
 				end
 			endcase
