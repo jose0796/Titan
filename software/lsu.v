@@ -12,7 +12,7 @@ module load_store_unit (
 			input 	          ierr_i,
 			output reg [31:0] iaddr_o,
 			output reg [31:0] idat_o,
-			output reg        isel_o,
+			output reg [ 3:0] isel_o,
 			output reg        icyc_o,
 			output reg        istb_o,
 			output reg 	  if_stall,
@@ -67,7 +67,7 @@ module load_store_unit (
 
 		initial begin
 			idat_o  = 32'hx; 
-			isel_o  = 1'bx; 
+			isel_o  = 4'hf; 
 			no_mem  = 1'b1;
 		end
 
@@ -78,7 +78,7 @@ module load_store_unit (
 		always @(posedge clk) begin
 			if (rst) begin 
 				//INTRUCTION MEMORY PORT RESET
-
+				isel_o   <= 4'hf;
 				if_stall <= 1'b1;
 				i_state  <= i_str;
 				iaddr_o  <= 32'hx;

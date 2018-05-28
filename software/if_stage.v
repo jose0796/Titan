@@ -33,6 +33,7 @@ module if_stage (
 	wire 	    wbm_cyc_o;
 	wire 	    wbm_stb_o;
 	wire 	    wbm_ready_o;
+	wire [3:0]  wbm_sel_o;
 	//--------------------
 
 
@@ -63,6 +64,7 @@ module if_stage (
 				.iack_i(wbm_ack_i),
 				.ierr_i(wbm_err_i),
 				.iaddr_o(wbm_addr_o),
+				.isel_o (wbm_sel_o),
 				.icyc_o(wbm_cyc_o),
 				.istb_o(wbm_stb_o),
 				.if_stall(if_stall_),
@@ -72,12 +74,13 @@ module if_stage (
 	bram 		BRAM (
 				.clk(clk_i),
 				.rst(rst_i),
-				.iaddr_i(wbm_addr_o),
-				.icyc_i(wbm_cyc_o),
-				.istb_i(wbm_stb_o),
-				.idat_o(wbm_dat_i),
-				.iack_o(wbm_ack_i),
-				.ierr_o(wbm_err_i) );		
+				.addr_i(wbm_addr_o),
+				.cyc_i(wbm_cyc_o),
+				.stb_i(wbm_stb_o),
+				.sel_i(wbm_sel_o),
+				.dat_o(wbm_dat_i),
+				.ack_o(wbm_ack_i),
+				.err_o(wbm_err_i) );		
 		
 	ifid_register IF_ID (
 				.clk(clk_i),
