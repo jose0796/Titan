@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "Vifid_stage.h"
+#include "Vdc_unit.h"
 #include "testbench.h"
 
 
@@ -23,6 +23,8 @@
 #define CSRIOP	10
 #define EXCAIF	11
 
+
+
 #define INST_1 0x00001297  / auipc t0,0x1 (pc = 94) 
 #define INST_2 0x00b57063  // bleu  a1,a0,c8 (a1 = 1, a0 = 0) 
 #define INST_3 0x00112223  // sw    ra,4(sp) (sp = -272)
@@ -34,7 +36,7 @@
 
 using namespace std;
 
-class SIMULATIONTB: public Testbench<Vifid_stage> {
+class SIMULATIONTB: public Testbench<Vdc_unit> {
   public:
     // -----------------------------------------------------------------------------
     // Testbench constructor

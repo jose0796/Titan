@@ -42,6 +42,10 @@ module bram(
 			memory[17] = 8'h02;
 			memory[18] = 8'h82;
 			memory[19] = 8'h93;
+			memory[20] = 8'h00;
+			memory[21] = 8'ha7;
+			memory[22] = 8'h80;
+			memory[23] = 8'h23;
 //			memory[12] = 32'h00000213;
 //			memory[16] = 32'h00000293;
 //			memory[20] = 32'h00000313;

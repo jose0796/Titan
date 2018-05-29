@@ -58,7 +58,7 @@ module decoder (
 		//+- EX STAGE ASSIGNMENTS
 		assign rs1 	    	= (lui)? 5'b0 : instruction[19:15]; 
 		assign rs2 	    	= instruction[24:20];
-		assign rd  	    	= instruction[11:7]; 
+		assign rd  	    	= (is_st)? 5'b0: instruction[11:7]; 
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
 	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
@@ -68,11 +68,6 @@ module decoder (
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
 		assign csr_op	    	= {rc, rs, rw}; 
-/*		assign mem_write = mem_wr;
-		assign mem_byte  = mem_b; 
-		assign mem_halfword = mem_hw;
-		assign mem_read  = mem_r;
-		assign mem_ex_sel= mem_ex_s;*/
 		
 		//TYPES OF INSTRUCTIONS
 		reg lui,auipc;
@@ -198,7 +193,7 @@ module decoder (
 		assign mem_wr 	    = is_st; 
 		assign mem_r  	    = is_ld;
 	        assign mem_access   = {is_word,is_hw,is_byte};	
-		assign mem_ex_s     = |{is_ld,is_st}; 
+		assign mem_ex_s     = |{is_ld}; 
 		assign mem_unsigned = is_ldu;
 
 		//COMPARATOR OP
