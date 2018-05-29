@@ -22,26 +22,26 @@ module bram(
 		localparam b_tx  = 1'b1; 
 
 		initial begin
-			memory[0]  = 8'h00;
+			memory[0]  = 8'h00; //auipc t0, 0x1 (pc = 94)
 			memory[1]  = 8'h00;
 			memory[2]  = 8'h12;
 			memory[3]  = 8'h97;
-			memory[4]  = 8'h00;
+			memory[4]  = 8'h00; // bleu a1,a0,c8 (a1 = 1, a0 =0)
 			memory[5]  = 8'hb5;
 			memory[6]  = 8'h70;
 			memory[7]  = 8'h63;
-			memory[8]  = 8'h00;
-			memory[9]  = 8'h11;
+			memory[8]  = 8'h00; //sw ra,4(sp) (sp = -272)
+			memory[9]  = 8'h11; 
 			memory[10] = 8'h22;
 			memory[11] = 8'h23;
-			memory[12] = 8'h00;
+			memory[12] = 8'h00; //lw ra,4(sp)
 			memory[13] = 8'h41;
 			memory[14] = 8'h20;
 			memory[15] = 8'h83;
-			memory[16] = 8'h30;
+			memory[16] = 8'h80; // addi t0,t0, -2048
 			memory[17] = 8'h02;
-			memory[18] = 8'ha0;
-			memory[19] = 8'h73;
+			memory[18] = 8'h82;
+			memory[19] = 8'h93;
 //			memory[12] = 32'h00000213;
 //			memory[16] = 32'h00000293;
 //			memory[20] = 32'h00000313;

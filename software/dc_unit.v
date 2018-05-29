@@ -1,5 +1,5 @@
 
-`include "./software/def.v"
+//`include "./software/def.v"
 
 module decoder (
 		input [31:0] instruction,
@@ -60,7 +60,7 @@ module decoder (
 		assign rs2 	    	= instruction[24:20];
 		assign rd  	    	= instruction[11:7]; 
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
-	        assign break_op     	= break;
+	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
 		//+- MEM STAGE ASSIGMENTS
 		assign mem_flags    	= {mem_wr,mem_r,mem_access,mem_unsigned};
@@ -85,7 +85,7 @@ module decoder (
 		reg fence; 
 		reg nop;
 		reg rw, rs, rc, rwi, rsi, rci;
-		reg call, break, ret;
+		reg call, _break, ret;
 
 		reg is_b, is_imm, is_st, is_ld;//flags for immediate generation
 		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt, is_sltu; //arithmetic operations flags
@@ -147,7 +147,7 @@ module decoder (
 			rsi	= opcode == `sp_op  && func3 == `rsi_f3;
 			rci	= opcode == `sp_op  && func3 == `rci_f3;
 			call	= opcode == `sp_op  && inst[31:7]  == `syscall;
-			break	= opcode == `sp_op  && inst[31:7]  == `break; 
+			_break	= opcode == `sp_op  && inst[31:7]  == `break; 
 			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
 			//---mem flags------
@@ -185,12 +185,12 @@ module decoder (
 		//IMMEDIATE GENERATOR
 		always @(*) begin
 			case(1'b1)	
-			lui || auipc	: imm <= { inst[31:12] , 12'h0}; 
-			jal		: imm <= { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
-			is_b 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
-			is_imm 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
-			is_st		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
-			is_csri		: imm <= { 27'b0, inst[19:15]};
+			lui || auipc	: imm = { inst[31:12] , 12'h0}; 
+			jal		: imm = { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
+			is_b 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
+			is_imm 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
+			is_st		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
+			is_csri		: imm = { 27'b0, inst[19:15]};
 			endcase
 		end 
 		
@@ -205,13 +205,13 @@ module decoder (
 		
 		always @(*) begin
 			case(1'b1)
-				beq  : comparator_op <= 3'b001;
-				bne  : comparator_op <= 3'b010;
-				blt  : comparator_op <= 3'b011;
-				bge  : comparator_op <= 3'b100;
-				bltu : comparator_op <= 3'b101;
-				bgeu : comparator_op <= 3'b110;
-				default: comparator_op <= 3'b0;
+				beq  : comparator_op = 3'b001;
+				bne  : comparator_op = 3'b010;
+				blt  : comparator_op = 3'b011;
+				bge  : comparator_op = 3'b100;
+				bltu : comparator_op = 3'b101;
+				bgeu : comparator_op = 3'b110;
+				default: comparator_op = 3'b0;
 			endcase
 		end
 				
@@ -219,29 +219,29 @@ module decoder (
 		
 		always @(*) begin
 			case(1'b1)
-				is_add : alu_op <= 4'b0000; 
-				is_sub : alu_op <= 4'b0001;
-				is_and : alu_op <= 4'b0010;
-				is_or  : alu_op <= 4'b0011;
-				is_xor : alu_op <= 4'b0100;
-				is_sll : alu_op <= 4'b0101;
-				is_sr  : alu_op <= ((sra || srai)? 4'b0110 : 4'b0111);
-				is_slt : alu_op <= 4'b1000;
-				is_sltu: alu_op <= 4'b1001;
+				is_add : alu_op = 4'b0000; 
+				is_sub : alu_op = 4'b0001;
+				is_and : alu_op = 4'b0010;
+				is_or  : alu_op = 4'b0011;
+				is_xor : alu_op = 4'b0100;
+				is_sll : alu_op = 4'b0101;
+				is_sr  : alu_op = ((sra || srai)? 4'b0110 : 4'b0111);
+				is_slt : alu_op = 4'b1000;
+				is_sltu: alu_op = 4'b1001;
 			/*	beq    : alu_op <= 5'b01010;
 				bne    : alu_op <= 5'b01011;
 				blt    : alu_op <= 5'b01100;
 				bge    : alu_op <= 5'b01101;
 				bltu   : alu_op <= 5'b01110;
 				bgeu   : alu_op <= 5'b01111;*/
-			        default: alu_op <= 4'b1111;	
+			        default: alu_op = 4'b1111;	
 			endcase
 		end 
 
 		//ALU_PORT SELECTION
 		always @(*) begin 
-			portb_sel <= (is_immop) ? 1'b1 : 1'b0;
-			porta_sel <= (auipc) ? 1'b1 : 1'b0;
+			portb_sel = (is_immop) ? 1'b1 : 1'b0;
+			porta_sel = (auipc) ? 1'b1 : 1'b0;
 		end
 endmodule			
 
