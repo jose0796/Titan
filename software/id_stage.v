@@ -38,6 +38,7 @@ module id_stage(
 		 output 	ex_syscall_op,
 	 	 output [2:0] 	ex_csr_op,
 		 output 	ex_csr_imm_op,
+		 output [11:0]  ex_csr_addr,
 		 output 	ex_exc_addr_if,
 		 output 	ex_ready );
 
@@ -159,6 +160,7 @@ module id_stage(
 			.id_syscall_op(syscall_op),
 			.id_csr_op(csr_op),
 			.id_csr_imm_op(csr_imm_op),
+			.id_csr_addr(csr_addr),
 			.id_waddr(waddr),
 			.id_exc_addr_if(exc_address_if),
 			.id_ready(id_ready),
@@ -175,6 +177,7 @@ module id_stage(
 			.ex_syscall_op(ex_syscall_op),
 			.ex_csr_op(ex_csr_op),
 			.ex_csr_imm_op(ex_csr_imm_op),
+			.ex_csr_addr(ex_csr_addr),
 			.ex_waddr(ex_waddr),
 	       		.ex_exc_addr_if(ex_exc_address_if),
 			.ex_ready(ex_ready));

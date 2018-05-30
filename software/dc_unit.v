@@ -14,12 +14,6 @@ module decoder (
 		//MEM STAGE CONTROL SIGNALS
 		output [5:0] mem_flags,
 		output mem_ex_sel,
-/*		output mem_write,
-		output mem_byte,
-		output mem_halfword,
-		output mem_read,
-		output mem_ex_sel,
-		output mem_unsigned,*/
 		//EX STAGE CONTROL SIGNALS
 		output reg [3:0] alu_op, 	
 		output reg [31:0] imm,
@@ -31,7 +25,8 @@ module decoder (
 		output jalr_op,
 		output break_op,
 		output csr_imm_op,
-		output [2:0] csr_op); 
+		output [2:0] csr_op, 
+		output [11:0] csr_addr); 
 	
 		wire [6:0] opcode;
 		wire [2:0] mem_access; 
@@ -68,6 +63,7 @@ module decoder (
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
 		assign csr_op	    	= {rc, rs, rw}; 
+		assign csr_addr		= instruction[31:20]; 
 		
 		//TYPES OF INSTRUCTIONS
 		reg lui,auipc;
@@ -134,7 +130,7 @@ module decoder (
 			srl	= opcode == `alu_op && func3 == `sr_f3      && func7 == `alu_f7;
 			sra	= opcode == `alu_op && func3 == `sr_f3      && func7 == `sra_f7;
 			//SPECIAL OPERATIONS
-			nop	= instruction == `nop_op;
+			fence   = opcode == `fence  && func3 == `fe_f3; 
 			rw	= opcode == `sp_op  && func3 == `rw_f3; 
 			rs	= opcode == `sp_op  && func3 == `rs_f3;
 			rc	= opcode == `sp_op  && func3 == `rc_f3;
@@ -160,7 +156,7 @@ module decoder (
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; //loads operation flag 
 			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori, is_ld, jalr}; //immediates operations excluding store
 			//--Arithmetic operations 
-			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; //add operation flag
+			is_add	    = |{add, addi, is_st, is_ld, lui, auipc, fence}; //add operation flag
 			is_sub	    = |{sub}; //sub operation flag
 			is_xor	    = |{_xor,xori};//xor operation flag
 			is_and	    = |{_and,andi}; //and operation flag
@@ -193,7 +189,7 @@ module decoder (
 		assign mem_wr 	    = is_st; 
 		assign mem_r  	    = is_ld;
 	        assign mem_access   = {is_word,is_hw,is_byte};	
-		assign mem_ex_s     = |{is_ld}; 
+		assign mem_ex_s     = is_ld; 
 		assign mem_unsigned = is_ldu;
 
 		//COMPARATOR OP
@@ -223,12 +219,6 @@ module decoder (
 				is_sr  : alu_op = ((sra || srai)? 4'b0110 : 4'b0111);
 				is_slt : alu_op = 4'b1000;
 				is_sltu: alu_op = 4'b1001;
-			/*	beq    : alu_op <= 5'b01010;
-				bne    : alu_op <= 5'b01011;
-				blt    : alu_op <= 5'b01100;
-				bge    : alu_op <= 5'b01101;
-				bltu   : alu_op <= 5'b01110;
-				bgeu   : alu_op <= 5'b01111;*/
 			        default: alu_op = 4'b1111;	
 			endcase
 		end 

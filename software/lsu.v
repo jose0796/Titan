@@ -10,6 +10,7 @@ module load_store_unit (
 			input [31:0]      idat_i,
 			input 	          iack_i,
 			input 	          ierr_i,
+			input 		  ilock_i,
 			output reg [31:0] iaddr_o,
 			output reg [31:0] idat_o,
 			output reg [ 3:0] isel_o,
@@ -36,6 +37,7 @@ module load_store_unit (
 			input [31:0]  	  ddat_i,
 			input 	      	  dack_i,
 			input         	  derr_i,
+			input 		  dlock_i,
 			output reg [31:0] daddr_o,
 			output reg [31:0] ddat_o,
 			output reg [ 3:0] dsel_o,
@@ -86,6 +88,7 @@ module load_store_unit (
 				istb_o   <= 1'b0; 
 				abort    <= 1'b0;
 				ready    <= 1'b0;
+				ilock_o  <= 1'b0;
 				//DATA MEMORY PORT RESET
 
 			end else begin
@@ -93,11 +96,13 @@ module load_store_unit (
 				if_stall_aux <= iack_i;
 				case (i_state)
 					i_str: begin
-						icyc_o  <= pc[1:0] == 0;
+						icyc_o  <= (ilock_i)? pc[1:0] == 0: 1'b0 ;
 						iaddr_o <= pc;
-						istb_o  <= pc[1:0] == 0;
+						ilock_o <= 1'b1;
+						istb_o  <= (ilock_i)? pc[1:0] == 0: 1'b0 ;
 						if(iack_i) begin 
 							//instruction <= idat_i;
+							ilock_o <= 1'b0;
 							icyc_o <= 1'b0;
 							istb_o <= 1'b0;
 							i_state <= i_str;
@@ -149,10 +154,11 @@ module load_store_unit (
 				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i)? 1'b0: 1'b1)); 
 				case(d_state)
 					d_str: begin
-						dcyc_o <= (^{mread,mwrite})? 1'b1: 1'b0;
-						dstb_o <= (^{mread,mwrite})? 1'b1: 1'b0;
+						dcyc_o <= ((^{mread,mwrite})? 1'b1: 1'b0);
+						dstb_o <= (^{mread,mwrite})? 1'b1: 1'b0);
 						dwe_o  <= ((mwrite)? 1'b1: 1'b0); 
 						daddr_o <= maddr_i;
+						dlock_o <= 1'b1;
 						d_state <=(^{mread,mwrite})? d_rx : d_str; 
 					end 
 					d_rx: begin //load state
@@ -162,11 +168,13 @@ module load_store_unit (
 							rdata  	<= ddat_i;
 							ddat_o  <= wdata;
 							d_state <= d_str;
+							dlock_o <= 1'b0
 						end else if(derr_i) begin
 							mem_bus_err <= 1'b1;
 							d_state <= d_err;	
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
+							dlock_o <= 1'b0;
 						end
 					end
 					d_err:begin

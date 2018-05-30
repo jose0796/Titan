@@ -65,4 +65,5 @@
 `define break		25'b0000000000010000000000000
 `define mret_f2		2'b00
 `define mret_f21	21'b000000100000000000000
-
+`define fence           7'b0001111
+`define fe_f3		3'b000
