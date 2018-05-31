@@ -37,15 +37,14 @@ class SIMULATIONTB: public Testbench<Vif_stage> {
     int Simulate(unsigned long max_time=1000000){
       Reset();
 
-      int instruction [TOTAL_TESTS]{ INST_1, INST_2, INST_3, INST_4, INST_5};
 
       //  pc_sel | id_inst    | id_pc | id_pc_add4
-      int data[TOTAL_TESTS][4] = {                      //           									
+      unsigned int data[TOTAL_TESTS][4] = {                      //           									
 	 {       0,	INST_1,	     0,           4},			//pc = pc + 4
 	 {	 0,     INST_2,	     4,		  8},			
-	 {	 0,	INST_3,	     8, 	  0xc},
-	 {	 0,	INST_4,	     0xc,	  0x10},
-	 {	 0,	INST_5,	     0x10,	  0x14}};
+	 {	 0,	INST_3,	     8, 	  12},
+	 {	 0,	INST_4,	     12,	  16},
+	 {	 0,	INST_5,	     16,	  20}};
 
       int num_test;
       for (num_test = 0; num_test < TOTAL_TESTS; num_test++) {
