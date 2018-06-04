@@ -1,14 +1,7 @@
 
-
 #include <iostream>
-
 #include "Vdc_unit.h"
 #include "testbench.h"
-
-
-#define OK_COLOR    "\033[0;32m"
-#define ERROR_COLOR "\033[0;31m"
-#define NO_COLOR    "\033[m"
 
 #define ALU_OP 	0
 #define WADDR  	1 
@@ -76,14 +69,14 @@
 
 using namespace std;
 
-class SIMULATIONTB: public Testbench<Vdc_unit> {
+class DC: public Testbench<Vdc_unit> {
   public:
     // -----------------------------------------------------------------------------
     // Testbench constructor
-    SIMULATIONTB(double frequency=1e6, double timescale=1e-9): Testbench(frequency, timescale) {}
+    DC(double frequency=1e6, double timescale=1e-9): Testbench(frequency, timescale) {}
 
 
-    int Simulate(unsigned long max_time=1000000){
+    int sim(unsigned long max_time=1000000){
 	Reset();
 
 	int alu_op, waddr, we, mem_flags,x_se, j_op, bad_ja, b_op, bad_ba, take_branch, br_op, s_op, csr_op, csr_imm_op, exc_addr_if;
@@ -164,20 +157,9 @@ class SIMULATIONTB: public Testbench<Vdc_unit> {
 
 
 int main(int argc, char **argv, char **env) {
-  std::unique_ptr<SIMULATIONTB> tb(new SIMULATIONTB());
+  std::unique_ptr<DC> dcu(new DC());
 
-  tb->OpenTrace("ifid_stage_test.vcd");
-
-  int ret = tb->Simulate();
-
-  printf("\nIF-ID STAGE Testbench:\n");
-
-  if(ret == TOTAL_TESTS)
-    printf(OK_COLOR "Test Passed! " NO_COLOR);
-  else
-    printf(ERROR_COLOR  "Test Failed! " NO_COLOR);
-
-  printf("Complete: %d/%d\n", ret, TOTAL_TESTS);
-
+  dcu->OpenTrace("ifid_stage_test.vcd");
+  dcu->sim();
   exit(0);
 }
