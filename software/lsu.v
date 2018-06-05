@@ -57,6 +57,7 @@ module load_store_unit (
 	       	reg [31:0]  rdata;
 		reg [31:0]  wdata;
 		reg [63:0]  no_rps = nrps; 
+		reg [ 3:0]  sel_o;
 	       	reg [1:0]  i_state;
 	        reg [1:0]  d_state;	
 		reg 	   if_stall_aux;
@@ -137,14 +138,13 @@ module load_store_unit (
 			if (rst) begin 
 				ddat_o    <= 32'hx; 
 				daddr_o   <= 32'hx;
-				dsel_o    = 4'hf; 
 				dwe_o     <= 1'b0; 
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
 				d_state   <= d_str;
 				mem_stall <= 1'b1;
 			end else begin
-				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i)? 1'b0: 1'b1)); 
+				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i|derr_i)? 1'b0: 1'b1)); 
 				case(d_state)
 					d_str: begin
 						dcyc_o <= ((^{mread,mwrite})? 1'b1: 1'b0);
@@ -152,18 +152,21 @@ module load_store_unit (
 						dwe_o  <= ((mwrite)? 1'b1: 1'b0); 
 						daddr_o <= maddr_i;
 						d_state <=(^{mread,mwrite})? d_trx : d_str; 
+						ddat_o  <= wdata;
+						dsel_o  <= sel_o;
 					end 
 					d_trx: begin //load state
 						if(dack_i) begin
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
-							rdata  	<= ddat_i;
-							ddat_o  <= wdata;
+						//	rdata  	<= ddat_i;
 							d_state <= d_str;
+							mem_stall <= 1'b0;
 						end else if(derr_i) begin
 							mem_bus_err <= 1'b1;
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
+							mem_stall <= 1'b0;
 						end
 					end
 					default: begin
@@ -178,18 +181,31 @@ module load_store_unit (
 
 		always @(*) begin
 			case(1'b1)
+				mword: sel_o = 4'hf;
+				mhw  : sel_o = 4'h3;
+				mbyte: sel_o = 4'h1;
+			endcase
+		end
+
+		always @(dack_i) begin
+			if(dack_i)
+				rdata = ddat_i;
+		end 
+
+		always @(*) begin
+			case(1'b1)
 				mread: begin
-					case(1'b1)
-						mbyte	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]};
-						mhw  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+					case(dsel_o)
+						4'h1	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+						4'h3  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
 						default	: data_o = rdata;
 					endcase
 				end
 				mwrite: begin
-					case(1'b1) 
-						mbyte	: begin wdata  = mdat_i[7:0];  dsel_o = 4'h1; end
-						mhw  	: begin wdata  = mdat_i[15:0]; dsel_o = 4'h3; end
-						default	: begin wdata  = mdat_i[31:0]; dsel_o = 4'hf; end
+					case(dsel_o) 
+						4'h1	: begin wdata  = mdat_i[7:0];   end
+						4'h3 	: begin wdata  = mdat_i[15:0];  end
+						default	: begin wdata  = mdat_i[31:0];  end
 					endcase
 				end
 			endcase
