@@ -25,50 +25,55 @@
 #define INST_5 0x80028293  // addi  t0,t0, -2048
 #define INST_6 0x00a78023  // sb    a0, 0(a5)
 
-#define TOTAL_TESTS 6
+#define ts 8
 
 using namespace std;
 
 class LSU_test: public Testbench<Vlsu_top> {
   public:
-    // -----------------------------------------------------------------------------
-    // Testbench constructor
+    
     LSU_test(double frequency=1e6, double timescale=1e-9): Testbench(frequency, timescale) {}
 
 
     int sim(unsigned long max_time=1000000){
 	Reset();
 
-	unsigned int writing[6][8] = {
+	unsigned int writing[ts][8] = {
 		{  0, 0xfffffff1, 0, 1, 0, 0, 1, 0 },       
 		{  4, 0xfffffff2, 0, 1, 0, 0, 1, 0 },       
 		{  8, 0xff00ff00, 0, 1, 0, 0, 1, 0 },       
 		{ 12, 0xf0f0f0f0, 0, 1, 0, 0, 1, 0 },      
-	        { 16, 0x11111111, 0, 1, 0, 0, 1, 0 },
-		{ 20,       0x11, 0, 1, 1, 0, 0, 0 }
+	        { 16, 0x22222222, 0, 1, 0, 0, 1, 0 },
+		{ 20,       0x11, 0, 1, 1, 0, 0, 0 },
+		{ 24, 	    0x0c, 0, 1, 1, 0, 0, 0 },
+		{ 28, 0x00ff00ff, 0, 1, 0, 0, 1, 0 }
 	};	
 
-	unsigned int reading[6][8] = {
+	unsigned int reading[ts][8] = {
 		{  0, 0, 1, 0, 0, 0, 1, 0 },       
 		{  4, 0, 1, 0, 0, 0, 1, 0 },       
 		{  8, 0, 1, 0, 0, 0, 1, 0 },       
 		{ 12, 0, 1, 0, 0, 0, 1, 0 },      
 	        { 16, 0, 1, 0, 0, 0, 1, 0 },
-		{ 20, 0, 1, 0, 1, 0, 0, 0 }
+		{ 20, 0, 1, 0, 1, 0, 0, 0 },
+		{ 24, 0, 1, 0, 1, 0, 0, 0 },
+		{ 28, 0, 1, 0, 0, 0, 1, 0 }
 
 	};
-	unsigned int data_o [6] = {
+	unsigned int data_o [ts] = {
 		0xfffffff1,
 		0xfffffff2,
 		0xff00ff00,
 		0xf0f0f0f0,
-		0x11111111,
-		0x11
+		0x22222222,
+		0x11, 
+		0x0c,
+		0x00ff00ff
 	}; 
 	int ok = 0; 
 
 	//writing test
-	for (int i = 0; i < 6; ++i) {
+	for (int i = 0; i < ts; ++i) {
 		m_core->maddr_i   = writing[i][0];
 		m_core->mdat_i    = writing[i][1];
 		m_core->mread     = writing[i][2];
@@ -79,16 +84,11 @@ class LSU_test: public Testbench<Vlsu_top> {
 		m_core->munsigned = writing[i][7];
 		
 		Tick(); 
-		/*for( ok = 0; ok < 10; ++ok){
-			if(m_core->dat_o == INST_1)
-			       break; 	
-			Tick();
-		}*/
 		while(m_core->mem_stall) Tick();
 		Tick();
 	}
 
-	for (int i = 0; i < 6; ++i) {
+	for (int i = 0; i < ts; ++i) {
 		m_core->maddr_i   = reading[i][0];
 		m_core->mdat_i    = reading[i][1];
 		m_core->mread     = reading[i][2];
@@ -108,7 +108,7 @@ class LSU_test: public Testbench<Vlsu_top> {
 			break;	
 	}
 	Tick();
-	if (ok == 6)
+	if (ok == ts)
 		printf("TEST PASSED !!\n"); 
 	else 
 		printf("TEST FAILED !!\n");

@@ -159,7 +159,7 @@ module load_store_unit (
 						if(dack_i) begin
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
-						//	rdata  	<= ddat_i;
+							rdata  	<= ddat_i;
 							d_state <= d_str;
 							mem_stall <= 1'b0;
 						end else if(derr_i) begin
@@ -187,28 +187,26 @@ module load_store_unit (
 			endcase
 		end
 
-		always @(dack_i) begin
-			if(dack_i)
-				rdata = ddat_i;
-		end 
 
 		always @(*) begin
-			case(1'b1)
-				mread: begin
-					case(dsel_o)
-						4'h1	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
-						4'h3  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
-						default	: data_o = rdata;
-					endcase
-				end
-				mwrite: begin
-					case(dsel_o) 
-						4'h1	: begin wdata  = mdat_i[7:0];   end
-						4'h3 	: begin wdata  = mdat_i[15:0];  end
-						default	: begin wdata  = mdat_i[31:0];  end
-					endcase
-				end
-			endcase
+//			if(dcyc_o) begin
+				case(1'b1)
+					mread: begin
+						case(1'b1)
+						mbyte	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+						mhw  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+						mword	: data_o = rdata;
+						endcase
+					end
+					mwrite: begin
+						case(sel_o) 
+							4'h1	: begin wdata  = mdat_i[7:0];   end
+							4'h3 	: begin wdata  = mdat_i[15:0];  end
+							default	: begin wdata  = mdat_i[31:0];  end
+						endcase
+					end
+				endcase
+//			end
 		end
 
 
