@@ -17,9 +17,6 @@ module load_store_unit (
 			output reg        istb_o,
 			output reg 	  if_stall,
 			output reg	  ready,
-			output reg 	  inst_misaligned,
-	       		output reg 	  abort,
-			output reg 	  no_mem,
 		        //DATA PORT INTERFACE
 			input [31:0]      maddr_i,
 			input [31:0]	  mdat_i,
@@ -30,8 +27,6 @@ module load_store_unit (
 			input 		  mword,
 			input 		  munsigned,
 			output reg [31:0] data_o,
-			output reg 	  mem_stall,
-			output reg 	  mem_bus_err,
 			//DATA MEMORY PORT
 			input [31:0]  	  ddat_i,
 			input 	      	  dack_i,
@@ -52,23 +47,15 @@ module load_store_unit (
 		localparam d_str  = 2'b00;
 		localparam d_trx   = 2'b01;
 		//-------------------------------------
-		localparam nrps   = 64'h8000000000000000;
-		localparam nop    = 32'h00000033;
-	       	reg [31:0]  rdata;
-		reg [31:0]  wdata;
-		reg [63:0]  no_rps = nrps; 
-		reg [ 3:0]  sel_o;
+	       	reg [31:0] rdata;
+		reg [31:0] wdata;
+		reg [ 3:0] wsel_o;
+		reg [ 3:0] rsel_o;
+		reg  	   runsigned; 
 	       	reg [1:0]  i_state;
 	        reg [1:0]  d_state;	
 		reg 	   if_stall_aux;
 
-		always @(*) inst_misaligned = ~(pc[1:0] == 0); 
-
-		initial begin
-			idat_o  = 32'hx; 
-			isel_o  = 4'hf; 
-			no_mem  = 1'b1;
-		end
 
 		always @(*) if_stall = ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
 		always @(posedge iack_i) instruction = idat_i;
@@ -77,13 +64,13 @@ module load_store_unit (
 		always @(posedge clk) begin
 			if (rst) begin 
 				//INTRUCTION MEMORY PORT RESET
+				idat_o  = 32'hx; 
 				isel_o   <= 4'hf;
 				if_stall <= 1'b1;
 				i_state  <= i_str;
 				iaddr_o  <= 32'hx;
 				icyc_o   <= 1'b0;
 				istb_o   <= 1'b0; 
-				abort    <= 1'b0;
 				ready    <= 1'b0;
 				//DATA MEMORY PORT RESET
 
@@ -100,27 +87,11 @@ module load_store_unit (
 							icyc_o <= 1'b0;
 							istb_o <= 1'b0;
 							i_state <= i_str;
-							no_rps <= nrps;
 						end else if(ierr_i) begin
 						        icyc_o 	<= 1'b0;
 							istb_o 	<= 1'b0;
 							i_state <= i_err; 	
-							end else begin 
-							no_rps <= {no_rps[0],no_rps[63:1]};
-							if(no_rps == 64'd1) begin
-								abort  <= 1'b1;
-								icyc_o <= 1'b0; 
-								istb_o <= 1'b0;
-								no_mem <= 1'b1;
-								i_state <= i_ab; 
-							end	
 						end
-					end
-					i_ab: begin
-						i_state <= i_ab;
-					end
-					i_err:	begin 
-						i_state <= i_str;
 					end
 
 					default: begin 
@@ -142,9 +113,7 @@ module load_store_unit (
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
 				d_state   <= d_str;
-				mem_stall <= 1'b1;
 			end else begin
-				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i|derr_i)? 1'b0: 1'b1)); 
 				case(d_state)
 					d_str: begin
 						dcyc_o <= ((^{mread,mwrite})? 1'b1: 1'b0);
@@ -153,7 +122,7 @@ module load_store_unit (
 						daddr_o <= maddr_i;
 						d_state <=(^{mread,mwrite})? d_trx : d_str; 
 						ddat_o  <= wdata;
-						dsel_o  <= sel_o;
+						dsel_o  <= wsel_o;
 					end 
 					d_trx: begin //load state
 						if(dack_i) begin
@@ -161,12 +130,9 @@ module load_store_unit (
 							dstb_o 	<= 1'b0;
 							rdata  	<= ddat_i;
 							d_state <= d_str;
-							mem_stall <= 1'b0;
 						end else if(derr_i) begin
-							mem_bus_err <= 1'b1;
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
-							mem_stall <= 1'b0;
 						end
 					end
 					default: begin
@@ -181,35 +147,39 @@ module load_store_unit (
 
 		always @(*) begin
 			case(1'b1)
-				mword: sel_o = 4'hf;
-				mhw  : sel_o = 4'h3;
-				mbyte: sel_o = 4'h1;
+				mword: wsel_o = 4'hf;
+				mhw  : wsel_o = 4'h3;
+				mbyte: wsel_o = 4'h1;
 			endcase
+		end
+
+		always @(negedge dcyc_o) begin
+			case(1'b1)
+				mword: rsel_o = 4'hf;
+				mhw  : rsel_o = 4'h3;
+				mbyte: rsel_o = 4'h1;
+			endcase
+			runsigned = munsigned; 
 		end
 
 
 		always @(*) begin
-//			if(dcyc_o) begin
 				case(1'b1)
 					mread: begin
-						case(1'b1)
-						mbyte	: data_o = {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
-						mhw  	: data_o = {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
-						mword	: data_o = rdata;
+						case(rsel_o)
+							4'h1	: data_o = {((runsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+							4'h3  	: data_o = {((runsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+							default	: data_o = rdata;
 						endcase
 					end
 					mwrite: begin
-						case(sel_o) 
+						case(wsel_o) 
 							4'h1	: begin wdata  = mdat_i[7:0];   end
 							4'h3 	: begin wdata  = mdat_i[15:0];  end
 							default	: begin wdata  = mdat_i[31:0];  end
 						endcase
 					end
 				endcase
-//			end
 		end
-
-
-
 
 endmodule
