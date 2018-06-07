@@ -1,13 +1,13 @@
-`include "software/mux21.v"
-`include "software/dc_unit.v"
-`include "software/def.v"
-`include "software/reg_file.v"
-`include "software/comparator.v"
-`include "software/idex_register.v"
+//`include "software/mux21.v"
+//`include "software/dc_unit.v"
+//`include "software/def.v"
+//`include "software/reg_file.v"
+//`include "software/comparator.v"
+//`include "software/idex_register.v"
 
 module id_stage(
-		 input clk,
-		 input rst,
+		 input clk_i,
+		 input rst_i,
 		 input 	[31:0] 	pc,
 		 input 	[31:0] 	pc_add4,
 		 input 	[31:0] 	instruction,
@@ -19,6 +19,7 @@ module id_stage(
 		 input  [31:0] 	forwardA,
 		 input  [31:0] 	forwardB, 
 		 input         	forward_sel,	
+		 input 		id_ready,
 		 output [31:0] 	pc_branch_address,
 		 output [31:0] 	pc_jump_address,
 		 output [31:0] 	ex_port_a,
@@ -37,7 +38,9 @@ module id_stage(
 		 output 	ex_syscall_op,
 	 	 output [2:0] 	ex_csr_op,
 		 output 	ex_csr_imm_op,
-		 output 	ex_exc_addr_if );
+		 output [11:0]  ex_csr_addr,
+		 output 	ex_exc_addr_if,
+		 output 	ex_ready );
 
  	wire [31:0] 	muxa_i;
         wire [31:0] 	muxb_i;	
@@ -74,9 +77,9 @@ module id_stage(
 	assign _imm 		   = ((jalr_op)? ($signed(imm << 1) + $signed(drs1)) : (imm<<1));
 	assign pc_jump_address 	   = {_imm[31:1], 1'b0}; 
 	assign pc_branch_address   = _imm + pc_add4; 
-	assign bad_jump_addr       = ~(pc_jump_address[1:0] == 0);
-	assign bad_branch_addr	   = ~(pc_branch_address[1:0] == 0);
-	assign mem_stall	   = 1'b0;
+	assign bad_jump_addr       = (jump_op)?(~(pc_jump_address[1:0] == 0)): 1'b0;
+	assign bad_branch_addr	   = (branch_op)?(~(pc_branch_address[1:0] == 0)):1'b0;
+	assign ex_stall	   = 1'b0;
 
 	mux2_1 PORT_A_MUX (
 			.in_0(muxa_i),
@@ -111,7 +114,7 @@ module id_stage(
 			.take_branch(take_branch));
 
 	register_file RF  (
-			.clk(clk),
+			.clk(clk_i),
 			.raddr_rs1(rs1),
 			.raddr_rs2(rs2),
 			.waddr_rd(wb_address),
@@ -142,9 +145,9 @@ module id_stage(
 			.csr_imm_op(csr_imm_op));
 	
 	idex_reg ID_EX (
-			.clk(clk),
-			.rst(rst),
-			.stall(mem_stall),
+			.clk(clk_i),
+			.rst(rst_i),
+			.stall(ex_stall),
 			.id_alu_op(alu_op),
 			.id_porta(port_a),
 			.id_portb(port_b),
@@ -157,8 +160,10 @@ module id_stage(
 			.id_syscall_op(syscall_op),
 			.id_csr_op(csr_op),
 			.id_csr_imm_op(csr_imm_op),
+			.id_csr_addr(csr_addr),
 			.id_waddr(waddr),
 			.id_exc_addr_if(exc_address_if),
+			.id_ready(id_ready),
 			//OUTPUTS
 			.ex_porta(ex_port_a),
 			.ex_portb(ex_port_b),
@@ -172,8 +177,10 @@ module id_stage(
 			.ex_syscall_op(ex_syscall_op),
 			.ex_csr_op(ex_csr_op),
 			.ex_csr_imm_op(ex_csr_imm_op),
+			.ex_csr_addr(ex_csr_addr),
 			.ex_waddr(ex_waddr),
-	       		.ex_exc_addr_if(ex_exc_address_if)	);
+	       		.ex_exc_addr_if(ex_exc_address_if),
+			.ex_ready(ex_ready));
 
 
 

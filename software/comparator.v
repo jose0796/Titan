@@ -24,13 +24,13 @@ module branch_predictor (
 
 	always @(*) begin
 		case(sel)
-			beq  : take_branch <= (sdrs1 == sdrs2);
-			bne  : take_branch <= (sdrs1 != sdrs2);
-			blt  : take_branch <= (sdrs1  < sdrs2); 
-			bge  : take_branch <= (sdrs1 >= sdrs2);
-			bltu : take_branch <= (udrs1 <  udrs2); 
-			bgeu : take_branch <= (udrs1 >= udrs2); 
-			default  : take_branch <= 1'b0;
+			beq  : take_branch = (sdrs1 == sdrs2);
+			bne  : take_branch = (sdrs1 != sdrs2);
+			blt  : take_branch = (sdrs1  < sdrs2); 
+			bge  : take_branch = (sdrs1 >= sdrs2);
+			bltu : take_branch = (udrs1 <  udrs2); 
+			bgeu : take_branch = (udrs1 >= udrs2); 
+			default  : take_branch = 1'b0;
 		endcase
 	end 
 endmodule

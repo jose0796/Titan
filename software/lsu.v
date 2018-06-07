@@ -12,14 +12,9 @@ module load_store_unit (
 			input 	          ierr_i,
 			output reg [31:0] iaddr_o,
 			output reg [31:0] idat_o,
-			output reg        isel_o,
+			output reg [ 3:0] isel_o,
 			output reg        icyc_o,
 			output reg        istb_o,
-			output reg 	  if_stall,
-			output reg	  ready,
-			output reg 	  inst_misaligned,
-	       		output reg 	  abort,
-			output reg 	  no_mem,
 		        //DATA PORT INTERFACE
 			input [31:0]      maddr_i,
 			input [31:0]	  mdat_i,
@@ -30,8 +25,6 @@ module load_store_unit (
 			input 		  mword,
 			input 		  munsigned,
 			output reg [31:0] data_o,
-			output reg 	  mem_stall,
-			output reg 	  mem_bus_err,
 			//DATA MEMORY PORT
 			input [31:0]  	  ddat_i,
 			input 	      	  dack_i,
@@ -50,47 +43,30 @@ module load_store_unit (
 		localparam i_err  = 2'b10;
 		//--------DATA PORT FSM STATES---------
 		localparam d_str  = 2'b00;
-		localparam d_rx   = 2'b01;
-		localparam d_tx   = 2'b10;
-		localparam d_err  = 2'b11;
+		localparam d_trx   = 2'b01;
 		//-------------------------------------
-		localparam nrps   = 64'h8000000000000000;
-		localparam nop    = 32'h00000033;
-	       	reg [31:0]  rdata;
-		reg [31:0]  wdata;
-		reg [63:0]  no_rps = nrps; 
+	       	reg [31:0] rdata;
+		reg [31:0] wdata;
+		reg [ 3:0] wsel_o;
+		reg [ 3:0] rsel_o;
+		reg  	   runsigned; 
 	       	reg [1:0]  i_state;
 	        reg [1:0]  d_state;	
-		reg 	   if_stall_aux;
 
-		always @(*) inst_misaligned <= ~(pc[1:0] == 0); 
-
-		initial begin
-			idat_o  <= 32'hx; 
-			isel_o  <= 1'bx; 
-			no_mem  <= 1'b1;
-		end
-
-		always @(*) if_stall <= ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
-		always @(posedge iack_i) instruction <= idat_i;
 
 		//INSTRUCTION FETCHING PROCESS	
 		always @(posedge clk) begin
 			if (rst) begin 
 				//INTRUCTION MEMORY PORT RESET
-
-				if_stall <= 1'b1;
+				idat_o  = 32'hx; 
+				isel_o   <= 4'hf;
 				i_state  <= i_str;
 				iaddr_o  <= 32'hx;
 				icyc_o   <= 1'b0;
 				istb_o   <= 1'b0; 
-				abort    <= 1'b0;
-				ready    <= 1'b0;
 				//DATA MEMORY PORT RESET
 
 			end else begin
-				ready 	 <= ((ready)? 1'b0:((iack_i)? 1'b1: 1'b0));
-				if_stall_aux <= iack_i;
 				case (i_state)
 					i_str: begin
 						icyc_o  <= pc[1:0] == 0;
@@ -101,27 +77,11 @@ module load_store_unit (
 							icyc_o <= 1'b0;
 							istb_o <= 1'b0;
 							i_state <= i_str;
-							no_rps <= nrps;
 						end else if(ierr_i) begin
 						        icyc_o 	<= 1'b0;
 							istb_o 	<= 1'b0;
 							i_state <= i_err; 	
-							end else begin 
-							no_rps <= {no_rps[0],no_rps[63:1]};
-							if(no_rps == 64'd1) begin
-								abort  <= 1'b1;
-								icyc_o <= 1'b0; 
-								istb_o <= 1'b0;
-								no_mem <= 1'b1;
-								i_state <= i_ab; 
-							end	
 						end
-					end
-					i_ab: begin
-						i_state <= i_ab;
-					end
-					i_err:	begin 
-						i_state <= i_str;
 					end
 
 					default: begin 
@@ -139,52 +99,32 @@ module load_store_unit (
 			if (rst) begin 
 				ddat_o    <= 32'hx; 
 				daddr_o   <= 32'hx;
-				dsel_o    <= 1'b0; 
 				dwe_o     <= 1'b0; 
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
 				d_state   <= d_str;
-				mem_stall <= 1'b1;
 			end else begin
-				mem_stall     <= ((|{mread,mwrite})? 1'b1: ((dack_i)? 1'b0: 1'b1)); 
 				case(d_state)
 					d_str: begin
-						dcyc_o <= (|{mread,mwrite})? 1'b1: 1'b0;
-						dstb_o <= (|{mread,mwrite})? 1'b1: 1'b0;
+						dcyc_o <= ((^{mread,mwrite})? 1'b1: 1'b0);
+						dstb_o <= (^{mread,mwrite})? 1'b1: 1'b0;
 						dwe_o  <= ((mwrite)? 1'b1: 1'b0); 
 						daddr_o <= maddr_i;
-						d_state <=((mwrite)? d_tx:((mread)? d_rx: d_str)); 
+						d_state <=(^{mread,mwrite})? d_trx : d_str; 
+						ddat_o  <= wdata;
+						dsel_o  <= wsel_o;
 					end 
-					d_rx: begin //load state
+					d_trx: begin //load state
 						if(dack_i) begin
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
 							rdata  	<= ddat_i;
 							d_state <= d_str;
 						end else if(derr_i) begin
-							mem_bus_err <= 1'b1;
-							d_state <= d_err;	
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
+							d_state <= d_str; 
 						end
-					end
-					d_tx: begin //store state 
-						if(dack_i) begin
-							dcyc_o <= 1'b0;
-							dstb_o <= 1'b0;
-							ddat_o <= wdata;
-							d_state <= d_str;
-						end else if(derr_i) begin
-							mem_bus_err <= 1'b1;
-							d_state <= d_err;
-							dcyc_o  <= 1'b0;
-							dstb_o  <= 1'b0;
-						end
-					end 
-					d_err:begin
-					       mem_bus_err <= 1'b0;
-				       	       dcyc_o      <= 1'b0;
-					       d_state 	   <= d_str;
 					end
 					default: begin
 						dcyc_o    <= 1'b0;
@@ -198,24 +138,39 @@ module load_store_unit (
 
 		always @(*) begin
 			case(1'b1)
-				mread: begin
-					case(1'b1)
-						mbyte	: data_o <= {((munsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
-						mhw  	: data_o <= {((munsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
-						default	: data_o <= rdata;
-					endcase
-				end
-				mwrite: begin
-					case(1'b1) 
-						mbyte	: wdata  <= mdat_i[7:0];
-						mhw  	: wdata  <= mdat_i[15:0];
-						default	: wdata  <= mdat_i; 
-					endcase
-				end
+				mword: wsel_o = 4'hf;
+				mhw  : wsel_o = 4'h3;
+				mbyte: wsel_o = 4'h1;
 			endcase
 		end
 
+		always @(negedge dcyc_o) begin
+			case(1'b1)
+				mword: rsel_o = 4'hf;
+				mhw  : rsel_o = 4'h3;
+				mbyte: rsel_o = 4'h1;
+			endcase
+			runsigned = munsigned; 
+		end
 
 
+		always @(*) begin
+				case(1'b1)
+					mread: begin
+						case(rsel_o)
+							4'h1	: data_o = {((runsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+							4'h3  	: data_o = {((runsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+							default	: data_o = rdata;
+						endcase
+					end
+					mwrite: begin
+						case(wsel_o) 
+							4'h1	: begin wdata  = mdat_i[7:0];   end
+							4'h3 	: begin wdata  = mdat_i[15:0];  end
+							default	: begin wdata  = mdat_i[31:0];  end
+						endcase
+					end
+				endcase
+		end
 
 endmodule

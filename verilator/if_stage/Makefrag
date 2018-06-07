@@ -1,0 +1,8 @@
+
+dependence = \
+	pc_reg.v \
+	pc_source.v \
+	pc_add.v \
+	ifid_reg.v \
+	bram.v \
+	lsu.v 

@@ -1,5 +1,5 @@
 
-`include "./software/def.v"
+//`include "./software/def.v"
 
 module decoder (
 		input [31:0] instruction,
@@ -14,12 +14,6 @@ module decoder (
 		//MEM STAGE CONTROL SIGNALS
 		output [5:0] mem_flags,
 		output mem_ex_sel,
-/*		output mem_write,
-		output mem_byte,
-		output mem_halfword,
-		output mem_read,
-		output mem_ex_sel,
-		output mem_unsigned,*/
 		//EX STAGE CONTROL SIGNALS
 		output reg [3:0] alu_op, 	
 		output reg [31:0] imm,
@@ -31,7 +25,8 @@ module decoder (
 		output jalr_op,
 		output break_op,
 		output csr_imm_op,
-		output [2:0] csr_op); 
+		output [2:0] csr_op, 
+		output [11:0] csr_addr); 
 	
 		wire [6:0] opcode;
 		wire [2:0] mem_access; 
@@ -58,9 +53,9 @@ module decoder (
 		//+- EX STAGE ASSIGNMENTS
 		assign rs1 	    	= (lui)? 5'b0 : instruction[19:15]; 
 		assign rs2 	    	= instruction[24:20];
-		assign rd  	    	= instruction[11:7]; 
+		assign rd  	    	= (is_st)? 5'b0: instruction[11:7]; 
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
-	        assign break_op     	= break;
+	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
 		//+- MEM STAGE ASSIGMENTS
 		assign mem_flags    	= {mem_wr,mem_r,mem_access,mem_unsigned};
@@ -68,11 +63,7 @@ module decoder (
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
 		assign csr_op	    	= {rc, rs, rw}; 
-/*		assign mem_write = mem_wr;
-		assign mem_byte  = mem_b; 
-		assign mem_halfword = mem_hw;
-		assign mem_read  = mem_r;
-		assign mem_ex_sel= mem_ex_s;*/
+		assign csr_addr		= instruction[31:20]; 
 		
 		//TYPES OF INSTRUCTIONS
 		reg lui,auipc;
@@ -85,7 +76,7 @@ module decoder (
 		reg fence; 
 		reg nop;
 		reg rw, rs, rc, rwi, rsi, rci;
-		reg call, break, ret;
+		reg call, _break, ret;
 
 		reg is_b, is_imm, is_st, is_ld;//flags for immediate generation
 		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt, is_sltu; //arithmetic operations flags
@@ -139,7 +130,7 @@ module decoder (
 			srl	= opcode == `alu_op && func3 == `sr_f3      && func7 == `alu_f7;
 			sra	= opcode == `alu_op && func3 == `sr_f3      && func7 == `sra_f7;
 			//SPECIAL OPERATIONS
-			nop	= instruction == `nop_op;
+			fence   = opcode == `fence  && func3 == `fe_f3; 
 			rw	= opcode == `sp_op  && func3 == `rw_f3; 
 			rs	= opcode == `sp_op  && func3 == `rs_f3;
 			rc	= opcode == `sp_op  && func3 == `rc_f3;
@@ -147,7 +138,7 @@ module decoder (
 			rsi	= opcode == `sp_op  && func3 == `rsi_f3;
 			rci	= opcode == `sp_op  && func3 == `rci_f3;
 			call	= opcode == `sp_op  && inst[31:7]  == `syscall;
-			break	= opcode == `sp_op  && inst[31:7]  == `break; 
+			_break	= opcode == `sp_op  && inst[31:7]  == `break; 
 			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
 			//---mem flags------
@@ -165,7 +156,7 @@ module decoder (
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; //loads operation flag 
 			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori, is_ld, jalr}; //immediates operations excluding store
 			//--Arithmetic operations 
-			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; //add operation flag
+			is_add	    = |{add, addi, is_st, is_ld, lui, auipc, fence}; //add operation flag
 			is_sub	    = |{sub}; //sub operation flag
 			is_xor	    = |{_xor,xori};//xor operation flag
 			is_and	    = |{_and,andi}; //and operation flag
@@ -185,12 +176,12 @@ module decoder (
 		//IMMEDIATE GENERATOR
 		always @(*) begin
 			case(1'b1)	
-			lui || auipc	: imm <= { inst[31:12] , 12'h0}; 
-			jal		: imm <= { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
-			is_b 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
-			is_imm 		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
-			is_st		: imm <= { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
-			is_csri		: imm <= { 27'b0, inst[19:15]};
+			lui || auipc	: imm = { inst[31:12] , 12'h0}; 
+			jal		: imm = { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
+			is_b 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
+			is_imm 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
+			is_st		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
+			is_csri		: imm = { 27'b0, inst[19:15]};
 			endcase
 		end 
 		
@@ -198,20 +189,20 @@ module decoder (
 		assign mem_wr 	    = is_st; 
 		assign mem_r  	    = is_ld;
 	        assign mem_access   = {is_word,is_hw,is_byte};	
-		assign mem_ex_s     = |{is_ld,is_st}; 
+		assign mem_ex_s     = is_ld; 
 		assign mem_unsigned = is_ldu;
 
 		//COMPARATOR OP
 		
 		always @(*) begin
 			case(1'b1)
-				beq  : comparator_op <= 3'b001;
-				bne  : comparator_op <= 3'b010;
-				blt  : comparator_op <= 3'b011;
-				bge  : comparator_op <= 3'b100;
-				bltu : comparator_op <= 3'b101;
-				bgeu : comparator_op <= 3'b110;
-				default: comparator_op <= 3'b0;
+				beq  : comparator_op = 3'b001;
+				bne  : comparator_op = 3'b010;
+				blt  : comparator_op = 3'b011;
+				bge  : comparator_op = 3'b100;
+				bltu : comparator_op = 3'b101;
+				bgeu : comparator_op = 3'b110;
+				default: comparator_op = 3'b0;
 			endcase
 		end
 				
@@ -219,29 +210,23 @@ module decoder (
 		
 		always @(*) begin
 			case(1'b1)
-				is_add : alu_op <= 4'b0000; 
-				is_sub : alu_op <= 4'b0001;
-				is_and : alu_op <= 4'b0010;
-				is_or  : alu_op <= 4'b0011;
-				is_xor : alu_op <= 4'b0100;
-				is_sll : alu_op <= 4'b0101;
-				is_sr  : alu_op <= ((sra || srai)? 4'b0110 : 4'b0111);
-				is_slt : alu_op <= 4'b1000;
-				is_sltu: alu_op <= 4'b1001;
-			/*	beq    : alu_op <= 5'b01010;
-				bne    : alu_op <= 5'b01011;
-				blt    : alu_op <= 5'b01100;
-				bge    : alu_op <= 5'b01101;
-				bltu   : alu_op <= 5'b01110;
-				bgeu   : alu_op <= 5'b01111;*/
-			        default: alu_op <= 4'b1111;	
+				is_add : alu_op = 4'b0000; 
+				is_sub : alu_op = 4'b0001;
+				is_and : alu_op = 4'b0010;
+				is_or  : alu_op = 4'b0011;
+				is_xor : alu_op = 4'b0100;
+				is_sll : alu_op = 4'b0101;
+				is_sr  : alu_op = ((sra || srai)? 4'b0110 : 4'b0111);
+				is_slt : alu_op = 4'b1000;
+				is_sltu: alu_op = 4'b1001;
+			        default: alu_op = 4'b1111;	
 			endcase
 		end 
 
 		//ALU_PORT SELECTION
 		always @(*) begin 
-			portb_sel <= (is_immop) ? 1'b1 : 1'b0;
-			porta_sel <= (auipc) ? 1'b1 : 1'b0;
+			portb_sel = (is_immop) ? 1'b1 : 1'b0;
+			porta_sel = (auipc) ? 1'b1 : 1'b0;
 		end
 endmodule			
 

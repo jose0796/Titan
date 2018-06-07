@@ -18,6 +18,7 @@ module idex_reg (
 		input 			id_csr_imm_op,
 		input 		[4:0] 	id_waddr,
 		input 			id_exc_addr_if,
+		input 			id_ready,
 		output reg 	[31:0] 	ex_porta,
 		output reg 	[31:0] 	ex_portb,
 		output reg 	[ 3:0] 	ex_alu_op,
@@ -31,7 +32,8 @@ module idex_reg (
 		output reg 	[ 2:0] 	ex_csr_op,
 		output reg 		ex_csr_imm_op,
        		output reg 	[ 4:0] 	ex_waddr,
-		output reg 		ex_exc_addr_if	); 
+		output reg 		ex_exc_addr_if,
+		output reg 		ex_ready	); 
 
 
 	always @(posedge clk) begin
@@ -49,6 +51,7 @@ module idex_reg (
 		ex_csr_imm_op	   <= ((rst)? 1'b0  : ((stall)? ex_csr_imm_op 	  	: id_csr_imm_op)); 
 		ex_waddr 	   <= ((rst)? 4'b0  : ((stall)? ex_waddr		: id_waddr)); 
 		ex_exc_addr_if     <= ((rst)? 1'b0  : ((stall)? ex_exc_addr_if      	: id_exc_addr_if));
+		ex_ready	   <= ((rst)? 1'b0  : ((stall)? ex_ready	      	: id_ready));
 	end
 endmodule
 
