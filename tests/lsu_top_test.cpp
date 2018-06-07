@@ -5,26 +5,6 @@
 #include "Vlsu_top.h"
 #include "testbench.h"
 
-#define ALU_OP 	0
-#define WADDR  	1 
-#define WE	2
-#define MEM_FL	3
-#define X_SEL	4
-#define BAD_JA	5
-#define BAD_BA	6
-#define BR_OP	7
-#define S_OP	8
-#define CSR_OP	9
-#define CSRIOP	10
-#define EXCAIF	11
-
-#define INST_1 0x00001297  // auipc t0,0x1 (pc = 94) 
-#define INST_2 0x00b57063  // bleu  a1,a0,c8 (a1 = 1, a0 = 0) 
-#define INST_3 0x00112223  // sw    ra,4(sp) (sp = -272)
-#define INST_4 0x00412083  // lw    ra,4(sp) (sp = -272)
-#define INST_5 0x80028293  // addi  t0,t0, -2048
-#define INST_6 0x00a78023  // sb    a0, 0(a5)
-
 #define ts 8
 
 using namespace std;

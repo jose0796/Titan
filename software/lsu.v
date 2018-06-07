@@ -15,8 +15,6 @@ module load_store_unit (
 			output reg [ 3:0] isel_o,
 			output reg        icyc_o,
 			output reg        istb_o,
-			output reg 	  if_stall,
-			output reg	  ready,
 		        //DATA PORT INTERFACE
 			input [31:0]      maddr_i,
 			input [31:0]	  mdat_i,
@@ -54,11 +52,7 @@ module load_store_unit (
 		reg  	   runsigned; 
 	       	reg [1:0]  i_state;
 	        reg [1:0]  d_state;	
-		reg 	   if_stall_aux;
 
-
-		always @(*) if_stall = ((iack_i)? ((if_stall_aux)? 1'b1: 1'b0): 1'b1);
-		always @(posedge iack_i) instruction = idat_i;
 
 		//INSTRUCTION FETCHING PROCESS	
 		always @(posedge clk) begin
@@ -66,17 +60,13 @@ module load_store_unit (
 				//INTRUCTION MEMORY PORT RESET
 				idat_o  = 32'hx; 
 				isel_o   <= 4'hf;
-				if_stall <= 1'b1;
 				i_state  <= i_str;
 				iaddr_o  <= 32'hx;
 				icyc_o   <= 1'b0;
 				istb_o   <= 1'b0; 
-				ready    <= 1'b0;
 				//DATA MEMORY PORT RESET
 
 			end else begin
-				ready 	 <= ((ready)? 1'b0:((iack_i)? 1'b1: 1'b0));
-				if_stall_aux <= iack_i;
 				case (i_state)
 					i_str: begin
 						icyc_o  <= pc[1:0] == 0;
@@ -133,6 +123,7 @@ module load_store_unit (
 						end else if(derr_i) begin
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
+							d_state <= d_str; 
 						end
 					end
 					default: begin
