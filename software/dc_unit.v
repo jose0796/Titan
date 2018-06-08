@@ -1,32 +1,32 @@
 
-//`include "./software/def.v"
+`include "def.v"
 
 module decoder (
-		input [31:0] instruction,
+		input 		[31:0] 	instruction,
 	        //IF STATE SIGNALS
 //		output pc_branch_address,
 		//ID STAGE SIGNALS
-		output [4:0] rs1, 
-		output [4:0] rs2,
-		output [4:0] rd,
-		output reg_write,
-		output reg [2:0] comparator_op,
+		output 		[4:0] 	rs1, 
+		output 		[4:0] 	rs2,
+		output 		[4:0]	rd,
+		output 			reg_write,
+		output reg 	[2:0] 	comparator_op,
 		//MEM STAGE CONTROL SIGNALS
-		output [5:0] mem_flags,
-		output mem_ex_sel,
+		output 		[5:0] 	mem_flags,
+		output 			mem_ex_sel,
 		//EX STAGE CONTROL SIGNALS
-		output reg [3:0] alu_op, 	
-		output reg [31:0] imm,
-		output reg portb_sel,
-		output reg porta_sel,
-		output syscall_op,
-		output branch_op,
-		output jump_op,
-		output jalr_op,
-		output break_op,
-		output csr_imm_op,
-		output [2:0] csr_op, 
-		output [11:0] csr_addr); 
+		output reg 	[3:0] 	alu_op, 	
+		output reg 	[31:0] 	imm,
+		output reg 		portb_sel,
+		output reg 		porta_sel,
+		output 			syscall_op,
+		output 			branch_op,
+		output 			jump_op,
+		output 			jalr_op,
+		output 			break_op,
+		output 			csr_imm_op,
+		output 		[2:0] 	csr_op, 
+		output 		[11:0] 	csr_addr	); 
 	
 		wire [6:0] opcode;
 		wire [2:0] mem_access; 

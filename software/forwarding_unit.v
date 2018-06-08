@@ -1,16 +1,16 @@
 
 
 module forward_unit (	
-			input 	[ 4:0] 	id_rs1_i,
-			input 	[ 4:0] 	id_rs2_i,
-			input 		we,
-			input 		ls_op,
-		        input 	[ 4:0] 	ex_rd_i,
-			input 	[ 4:0] 	mem_rd_i,
-			input 	[ 4:0] 	wb_rd_i,
-			output 	[ 1:0]	fwd_sel_a,
-			output 	[ 1:0]	fwd_sel_b,
-			output 		ld_dependence ); 
+			input 		[ 4:0] 	id_rs1_i,
+			input 		[ 4:0] 	id_rs2_i,
+			input 			we,
+			input 			ls_op,
+		        input 		[ 4:0] 	ex_rd_i,
+			input 		[ 4:0] 	mem_rd_i,
+			input 		[ 4:0] 	wb_rd_i,
+			output reg	[ 1:0]	fwd_sel_a,
+			output reg 	[ 1:0]	fwd_sel_b,
+			output 			ld_dependence ); 
 
 		
 		wire ex_fwd_a;

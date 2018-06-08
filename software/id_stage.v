@@ -1,46 +1,46 @@
-//`include "software/mux21.v"
-//`include "software/dc_unit.v"
-//`include "software/def.v"
-//`include "software/reg_file.v"
-//`include "software/comparator.v"
-//`include "software/idex_register.v"
+`include "./dc_unit.v"
+`include "./mux21.v"
+`include "./mux41.v"
+`include "./def.v"
+`include "./reg_file.v"
+`include "./comparator.v"
+`include "./idex_register.v"
 
 module id_stage(
-		 input clk_i,
-		 input rst_i,
-		 input 	[31:0] 	pc,
-		 input 	[31:0] 	pc_add4,
-		 input 	[31:0] 	instruction,
-		 input 		exc_address_if,
-		 input  [31:0] 	wb_data,
-		 input  [ 4:0] 	wb_address,
-		 input  	wb_we,
-		 input  	mem_stall,
-		 input  [31:0] 	forwardA,
-		 input  [31:0] 	forwardB, 
-		 input         	forward_sel,	
-		 input 		id_ready,
-		 output [31:0] 	pc_branch_address,
-		 output [31:0] 	pc_jump_address,
-		 output [31:0] 	ex_port_a,
-		 output [31:0] 	ex_port_b,
-		 output [ 3:0] 	ex_alu_op,
-		 output [ 4:0] 	ex_waddr,
-		 output 	ex_we,	
-		 output [ 5:0] 	ex_mem_flags,
-		 output 	ex_mem_ex_sel,
-		 output 	ex_jump_op,
-		 output 	ex_bad_jump_addr,
-		 output 	ex_branch_op,
-		 output 	ex_bad_branch_addr, 
+		 input 		clk_i,
+		 input 		rst_i,
+		 input 	[31:0] 	id_pc_i,
+		 input 	[31:0] 	id_pc_add4_i,
+		 input 	[31:0] 	id_instruction_i,
+		 input 		id_exc_address_if_i,
+		 input  [31:0] 	wb_data_i,
+		 input  [ 4:0] 	wb_address_i,
+		 input  	wb_we_i,
+		 input  	id_stall_i,
+		 input 		id_flush_i,
+		 input  [31:0] 	ex_fwd_drd_i,
+		 input  [31:0] 	mem_fwd_drd_i,
+		 input 	[31:0]  wb_fwd_drd_i,
+		 input  [ 1:0]  forward_a_sel_i,
+	 	 input 	[ 1:0]	forward_b_sel_i,	 
+		 output [31:0] 	pc_branch_address_o,
+		 output [31:0] 	pc_jump_address_o,
 		 output 	take_branch,
-		 output 	ex_break_op,
-		 output 	ex_syscall_op,
-	 	 output [2:0] 	ex_csr_op,
-		 output 	ex_csr_imm_op,
-		 output [11:0]  ex_csr_addr,
-		 output 	ex_exc_addr_if,
-		 output 	ex_ready );
+		 output [31:0] 	ex_port_a_o,
+		 output [31:0] 	ex_port_b_o,
+		 output [ 3:0] 	ex_alu_op_o,
+		 output [ 4:0] 	ex_waddr_o,
+		 output 	ex_we_o,	
+		 output [ 5:0] 	ex_mem_flags_o,
+		 output 	ex_mem_ex_sel_o,
+		 output 	ex_bad_jump_addr_o,
+		 output 	ex_bad_branch_addr_o, 
+		 output 	ex_break_op_o,
+		 output 	ex_syscall_op_o,
+	 	 output [2:0] 	ex_csr_op_o,
+		 output 	ex_csr_imm_op_o,
+		 output [11:0]  ex_csr_addr_o,
+		 output 	ex_exc_addr_if_o		);
 
  	wire [31:0] 	muxa_i;
         wire [31:0] 	muxb_i;	
@@ -71,20 +71,20 @@ module id_stage(
 	wire 		take_branch;
 	wire 		break_op;
 	wire 		syscall_op;
+	wire [11:0]	csr_addr;
 	wire [2:0] 	csr_op;
 	wire 		csr_imm_op;
 
-	assign _imm 		   = ((jalr_op)? ($signed(imm << 1) + $signed(drs1)) : (imm<<1));
-	assign pc_jump_address 	   = {_imm[31:1], 1'b0}; 
-	assign pc_branch_address   = _imm + pc_add4; 
-	assign bad_jump_addr       = (jump_op)?(~(pc_jump_address[1:0] == 0)): 1'b0;
-	assign bad_branch_addr	   = (branch_op)?(~(pc_branch_address[1:0] == 0)):1'b0;
-	assign ex_stall	   = 1'b0;
+	assign _imm 		   	= ((jalr_op)? ($signed(imm << 1) + $signed(drs1)) : (imm<<1));
+	assign pc_jump_address_o 	= {_imm[31:1], 1'b0}; 
+	assign pc_branch_address_o   	= _imm + id_pc_add4_i; 
+	assign bad_jump_addr_o       	= (jump_op)?(~(pc_jump_address_o[1:0] == 0)): 1'b0;
+	assign bad_branch_addr_o	= (branch_op)?(~(pc_branch_address_o[1:0] == 0)):1'b0;
 
 	mux2_1 PORT_A_MUX (
 			.in_0(muxa_i),
-			.in_1(pc),
-			.sel(porta_sel),
+			.in_1(id_pc_i),
+			.sel(porta_sel_i),
 			.out(port_a) );
 	
 	mux2_1 PORT_B_MUX (
@@ -95,16 +95,20 @@ module id_stage(
 
 
 
-	mux2_1 FORWARD_A_MUX (
+	mux4_1 FORWARD_A_MUX (
 			.in_0(drs1),
-			.in_1(forwardA),
-			.sel(forward_sel),
+			.in_1(ex_fwd_drd_i),
+			.in_2(mem_fwd_drd_i),
+			.in_3(wb_fwd_drd_i),
+			.sel(forward_a_sel_i),
 			.out(muxa_i) ); 
 
-	mux2_1 FORWARD_B_MUX (
+	mux4_1 FORWARD_B_MUX (
 			.in_0(drs2),
-			.in_1(forwardB),
-			.sel(forward_sel),
+			.in_1(ex_fwd_drd_i),
+			.in_2(mem_fwd_drd_i),
+			.in_3(wb_fwd_drd_i),
+			.sel(forward_b_sel_i),
 			.out(muxb_i) ); 
 	
 	branch_predictor BP (
@@ -117,14 +121,14 @@ module id_stage(
 			.clk(clk_i),
 			.raddr_rs1(rs1),
 			.raddr_rs2(rs2),
-			.waddr_rd(wb_address),
-			.wdata_rd(wb_data),
-			.we(wb_we),
+			.waddr_rd(wb_address_i),
+			.wdata_rd(wb_data_i),
+			.we(wb_we_i),
 			.rdata_rs1(drs1),
 			.rdata_rs2(drs2) );
 
 	decoder      DCU  (	
-			.instruction(instruction),
+			.instruction(id_instruction_i),
 			.rs1(rs1),
 			.rs2(rs2),
 			.rd(waddr),
@@ -140,14 +144,15 @@ module id_stage(
 			.branch_op(branch_op),
 			.jump_op(jump_op),
 			.jalr_op(jalr_op),
-			.break_op(break_op), 
+			.break_op(break_op),
+		        .csr_addr(csr_addr),	
 			.csr_op(csr_op),
 			.csr_imm_op(csr_imm_op));
 	
 	idex_reg ID_EX (
 			.clk(clk_i),
 			.rst(rst_i),
-			.stall(ex_stall),
+			.stall(id_stall_i),
 			.id_alu_op(alu_op),
 			.id_porta(port_a),
 			.id_portb(port_b),
@@ -162,25 +167,23 @@ module id_stage(
 			.id_csr_imm_op(csr_imm_op),
 			.id_csr_addr(csr_addr),
 			.id_waddr(waddr),
-			.id_exc_addr_if(exc_address_if),
-			.id_ready(id_ready),
+			.id_exc_addr_if(id_exc_address_if_i),
 			//OUTPUTS
-			.ex_porta(ex_port_a),
-			.ex_portb(ex_port_b),
-			.ex_alu_op(ex_alu_op),
-			.ex_we(ex_we),
-			.ex_mem_flags(ex_mem_flags),
-			.ex_mem_ex_sel(ex_mem_ex_sel),
-			.ex_bad_jump_addr(ex_bad_jump_addr),
-			.ex_bad_branch_addr(ex_bad_branch_addr),
-			.ex_break_op(ex_break_op),
-			.ex_syscall_op(ex_syscall_op),
-			.ex_csr_op(ex_csr_op),
-			.ex_csr_imm_op(ex_csr_imm_op),
-			.ex_csr_addr(ex_csr_addr),
-			.ex_waddr(ex_waddr),
-	       		.ex_exc_addr_if(ex_exc_address_if),
-			.ex_ready(ex_ready));
+			.ex_porta(ex_port_a_o),
+			.ex_portb(ex_port_b_o),
+			.ex_alu_op(ex_alu_op_o),
+			.ex_we(ex_we_o),
+			.ex_mem_flags(ex_mem_flags_o),
+			.ex_mem_ex_sel(ex_mem_ex_sel_o),
+			.ex_bad_jump_addr(ex_bad_jump_addr_o),
+			.ex_bad_branch_addr(ex_bad_branch_addr_o),
+			.ex_break_op(ex_break_op_o),
+			.ex_syscall_op(ex_syscall_op_o),
+			.ex_csr_op(ex_csr_op_o),
+			.ex_csr_imm_op(ex_csr_imm_op_o),
+			.ex_csr_addr(ex_csr_addr_o),
+			.ex_waddr(ex_waddr_o),
+	       		.ex_exc_addr_if(ex_exc_address_if_o));
 
 
 

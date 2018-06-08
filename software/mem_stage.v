@@ -8,8 +8,8 @@ module mem_stage(
 		  //MEM => ID FORWARDING 
 		  output 	[31:0] forward_mem_dat_o,
 	          //EX => MEM SIGNALS 
-		  input 	[31:0]	mem_pc,
-		  input 	[31:0]	mem_instruction,
+		  input 	[31:0]	mem_pc_i,
+		  input 	[31:0]	mem_instruction_i,
 		  input		[31:0]	mem_result_i, 
 		  input 	[ 4:0] 	mem_waddr_i, 
 		  input 		mem_we_i,
@@ -30,13 +30,13 @@ module mem_stage(
 		  //CSR SIGNALS
 		  output reg 	[ 2:0]	wb_csr_op_o,
 		  output reg 		wb_csr_imm_op_o,
-		  output reg 		wb_exc_addr_if_o,
+		  output reg 		wb_exc_addr_if_o
 	 	  //EXCEPTION SIGNALS
 		  ); 
 			
 
-		wire [31:0] wb_result; 
-		wire [31:0] wb_addr; 
+		reg [31:0] wb_result; 
+		reg [31:0] wb_addr; 
 
 		assign forward_mem_dat_o = wb_result; 
 
@@ -55,7 +55,7 @@ module mem_stage(
 			wb_result_o 		<= (rst_i | flush) ? 32'h0  : ((stall)? wb_result_o : mem_result_i); 
 			wb_waddr_o 		<= (rst_i | flush) ? 32'h0  : ((stall)? wb_waddr_o : mem_waddr_i); 
 			wb_we_o 		<= (rst_i | flush) ? 1'h0   : ((stall)? wb_we_o : mem_we_i); 
-			wb_csr_op_o 		<= (rst_i | flush) ? 3'h0   : ((stall)? wb_csr_op_o : mem_csr_op_o); 
+			wb_csr_op_o 		<= (rst_i | flush) ? 3'h0   : ((stall)? wb_csr_op_o : mem_csr_op_i); 
 			wb_csr_imm_op_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_csr_imm_op_o : mem_csr_imm_op_i); 
 			wb_exc_addr_if_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_exc_addr_if_o : mem_exc_addr_if_i); 
 		end	
