@@ -38,21 +38,21 @@ module idex_reg (
 
 
 	always @(posedge clk) begin
-		ex_porta 	   <= ((rst)? 32'b0 : ((stall)? ex_porta 		: id_porta)); 
-	        ex_portb 	   <= ((rst)? 32'b0 : ((stall)? ex_portb 		: id_portb)); 
-		ex_alu_op	   <= ((rst)? 4'b0  : ((stall)? ex_alu_op		: id_alu_op));
-		ex_we    	   <= ((rst)? 1'b0  : ((stall)? ex_we    		: id_we   ));
-		ex_mem_flags	   <= ((rst)? 6'b0  : ((stall)? ex_mem_flags	  	: id_mem_flags)); 
-		ex_mem_ex_sel	   <= ((rst)? 1'b0  : ((stall)? ex_mem_ex_sel	  	: id_mem_ex_sel)); 
-		ex_bad_jump_addr   <= ((rst)? 1'b0  : ((stall)? ex_bad_jump_addr 	: id_bad_jump_addr));
-		ex_bad_branch_addr <= ((rst)? 1'b0  : ((stall)? ex_bad_branch_addr  	: id_bad_branch_addr));
-		ex_break_op	   <= ((rst)? 1'b0  : ((stall)? ex_break_op 	  	: id_break_op));
-		ex_syscall_op      <= ((rst)? 1'b0  : ((stall)? ex_syscall_op       	: id_syscall_op));
-		ex_csr_op	   <= ((rst)? 3'b0  : ((stall)? ex_csr_op		: id_csr_op )); 
-		ex_csr_addr	   <= ((rst)? 3'b0  : ((stall)? ex_csr_addr		: id_csr_addr )); 
-		ex_csr_imm_op	   <= ((rst)? 1'b0  : ((stall)? ex_csr_imm_op 	  	: id_csr_imm_op)); 
-		ex_waddr 	   <= ((rst)? 4'b0  : ((stall)? ex_waddr		: id_waddr)); 
-		ex_exc_addr_if     <= ((rst)? 1'b0  : ((stall)? ex_exc_addr_if      	: id_exc_addr_if));
+		ex_porta 	   <= ((rst|flush)? 32'b0 : ((stall)? ex_porta 			: id_porta)); 
+	        ex_portb 	   <= ((rst|flush)? 32'b0 : ((stall)? ex_portb 			: id_portb)); 
+		ex_alu_op	   <= ((rst|flush)? 4'b0  : ((stall)? ex_alu_op			: id_alu_op));
+		ex_we    	   <= ((rst|flush)? 1'b0  : ((stall)? ex_we    			: id_we   ));
+		ex_mem_flags	   <= ((rst|flush)? 6'b0  : ((stall)? ex_mem_flags	  	: id_mem_flags)); 
+		ex_mem_ex_sel	   <= ((rst|flush)? 1'b0  : ((stall)? ex_mem_ex_sel	  	: id_mem_ex_sel)); 
+		ex_bad_jump_addr   <= ((rst|flush)? 1'b0  : ((stall)? ex_bad_jump_addr 		: id_bad_jump_addr));
+		ex_bad_branch_addr <= ((rst|flush)? 1'b0  : ((stall)? ex_bad_branch_addr  	: id_bad_branch_addr));
+		ex_break_op	   <= ((rst|flush)? 1'b0  : ((stall)? ex_break_op 	  	: id_break_op));
+		ex_syscall_op      <= ((rst|flush)? 1'b0  : ((stall)? ex_syscall_op       	: id_syscall_op));
+		ex_csr_op	   <= ((rst|flush)? 3'b0  : ((stall)? ex_csr_op			: id_csr_op )); 
+		ex_csr_addr	   <= ((rst|flush)? 3'b0  : ((stall)? ex_csr_addr		: id_csr_addr )); 
+		ex_csr_imm_op	   <= ((rst|flush)? 1'b0  : ((stall)? ex_csr_imm_op 	  	: id_csr_imm_op)); 
+		ex_waddr 	   <= ((rst|flush)? 4'b0  : ((stall)? ex_waddr			: id_waddr)); 
+		ex_exc_addr_if     <= ((rst|flush)? 1'b0  : ((stall)? ex_exc_addr_if      	: id_exc_addr_if));
 	end
 endmodule
 

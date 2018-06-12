@@ -58,7 +58,14 @@ module bram(
 		end*/
 
 		always @(*) if (~(cyc_i & stb_i)) ack_o = 1'b0;
-
+		//PERFECT MEMORY IMPLEMENTATION 
+/*		always @(*)  begin 
+			if ( cyc_i & stb_i ) begin 
+				ack_o = 1'b1; 
+				dat_o = rdat; 
+			end 
+		end*/
+		//REAL MEMORY IMPLEMENTATION
 		always @(posedge clk) begin
 			if (rst) begin
 				dat_o <= 32'bx;
@@ -78,35 +85,34 @@ module bram(
 
 					end 
 				endcase
-			end
+	       		end 
 		end
 
-	always @(*) begin
-		case(we_i) 
-			1'b0: begin
-				case(sel_i) 
-					4'h1: rdat = {4{memory[addr_i]}}; 
-					4'h3: rdat = {2{memory[addr_i],memory[addr_i+1]}};
-			//		4'hc: rdat = {2{memory[addr_i],memory[addr_i+1]}};
-					4'hf: rdat = {memory[addr_i], memory[addr_i+1],memory[addr_i+2], memory[addr_i + 3]};
-					default: err_o = 1;
-				endcase
-			end
-			1'b1: begin
-				case(sel_i)
-					4'h1: begin memory[addr_i] = dat_i[7:0]; end
-					4'h3: begin memory[addr_i] = dat_i[15:8]; memory[addr_i+1] = dat_i[7:0]; end
-			//		4'hc: begin memory[addr_i] = dat_i[31:24]; memory[addr_i+1] = dat_i[23:16]; end
-				        4'hf: begin
-						memory[addr_i]	 = dat_i[31:24];
-						memory[addr_i+1] = dat_i[23:16];
-						memory[addr_i+2] = dat_i[15:8]; 
-						memory[addr_i+3] = dat_i[7:0];	
-					end
-				endcase
-			end
-		endcase
-	end			
+
+		always @(*) begin
+			case(we_i) 
+				1'b0: begin
+					case(sel_i) 
+						4'h1: rdat = {4{memory[addr_i]}}; 
+						4'h3: rdat = {2{memory[addr_i],memory[addr_i+1]}};
+						4'hf: rdat = {memory[addr_i], memory[addr_i+1],memory[addr_i+2], memory[addr_i + 3]};
+						default: err_o = 1;
+					endcase
+				end
+				1'b1: begin
+					case(sel_i)
+						4'h1: begin memory[addr_i] = dat_i[7:0]; end
+						4'h3: begin memory[addr_i] = dat_i[15:8]; memory[addr_i+1] = dat_i[7:0]; end
+				        	4'hf: begin
+							memory[addr_i]	 = dat_i[31:24];
+							memory[addr_i+1] = dat_i[23:16];
+							memory[addr_i+2] = dat_i[15:8]; 
+							memory[addr_i+3] = dat_i[7:0];	
+						end
+					endcase
+				end
+			endcase
+		end			
 
 
 
