@@ -1,10 +1,10 @@
-`include "./dc_unit.v"
-`include "./mux21.v"
-`include "./mux41.v"
-`include "./def.v"
-`include "./reg_file.v"
-`include "./comparator.v"
-`include "./idex_register.v"
+//`include "./dc_unit.v"
+//`include "./mux21.v"
+//`include "./mux41.v"
+//`include "./def.v"
+//`include "./reg_file.v"
+//`include "./comparator.v"
+//`include "./idex_register.v"
 
 module id_stage(
 		 input 		clk_i,

@@ -10,13 +10,14 @@ module if_stage (
 		input  		clk_i,
 		input  		rst_i,
 		input  		if_stall,
-		input  [31:0]	pc_branch_address,
-		input  [31:0] 	pc_jump_address,
-		input  [1:0] 	pc_sel,
+		input  [31:0]	pc_branch_address_i,
+		input  [31:0] 	pc_jump_address_i,
+		input  [ 1:0] 	if_pc_sel_i,
+		input 		if_exc_addr_i,
 		output [31:0] 	id_instruction_o,
 		output [31:0] 	id_pc_o,
-		output [31:0] 	id_pc_add4,
-		output 		exc_addr_o		); 
+		output [31:0] 	id_pc_add4_o,
+		output 		id_exc_addr_o		); 
 
 	wire [31:0] if_pc_mux; 
 	wire [31:0] if_pc_o;
@@ -47,11 +48,11 @@ module if_stage (
 				.stall(if_stall),
 				.if_pc(if_pc_o),
 				.if_pc_add4(if_pc_add4),
-				.if_exc_addr(exc_addr_o),
+				.if_exc_addr(if_exc_addr_o),
 				.if_inst(if_instruction_o),
 				.if_ready(wbm_ready_o),
 				.id_pc(id_pc_o),
-				.id_pc_add4(id_pc_add4),
+				.id_pc_add4(id_pc_add4_o),
 				.id_inst(id_instruction_o),
 				.id_exc_addr(id_exc_addr_o), 
 				.id_ready(id_ready_o) ); 
