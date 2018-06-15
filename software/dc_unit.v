@@ -73,7 +73,7 @@ module decoder (
 		reg sb, sh, sw;
 		reg addi, slti, sltiu, xori, ori, andi, slli, srli, srai;
 		reg add, sub, sll, slt, sltu, _xor, srl, sra, _or, _and;
-		reg fence; 
+		reg fence, fencei; 
 		reg nop;
 		reg rw, rs, rc, rwi, rsi, rci;
 		reg call, _break, ret;
@@ -130,7 +130,8 @@ module decoder (
 			srl	= opcode == `alu_op && func3 == `sr_f3      && func7 == `alu_f7;
 			sra	= opcode == `alu_op && func3 == `sr_f3      && func7 == `sra_f7;
 			//SPECIAL OPERATIONS
-			fence   = opcode == `fence  && func3 == `fe_f3; 
+			fence   = opcode == `fence  && func3 == `fe_f3;
+		        fencei  = opcode == `fence  && func3 == `fei_f3;
 			rw	= opcode == `sp_op  && func3 == `rw_f3; 
 			rs	= opcode == `sp_op  && func3 == `rs_f3;
 			rc	= opcode == `sp_op  && func3 == `rc_f3;
@@ -139,14 +140,12 @@ module decoder (
 			rci	= opcode == `sp_op  && func3 == `rci_f3;
 			call	= opcode == `sp_op  && inst[31:7]  == `syscall;
 			_break	= opcode == `sp_op  && inst[31:7]  == `break; 
-			ret	= opcode == `sp_op  && inst[31:30] == `mret_f2 && inst[27:7] == `mret_f21; 
 
 			//---mem flags------
 			is_word     = |{lw,sw};
 			is_hw	    = |{lh,lhu,sh};
 			is_byte     = |{lb,lbu,sb};
 
-			is_csr      = |{rw,rs,rc, rwi, rsi, rci}; 
 			is_csri	    = |{rwi, rsi, rci}; 
 			is_ldu	    = |{lbu,lhu};
 			//---IMM FLAGS FOR DECODING
@@ -156,7 +155,7 @@ module decoder (
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; //loads operation flag 
 			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori, is_ld, jalr}; //immediates operations excluding store
 			//--Arithmetic operations 
-			is_add	    = |{add, addi, is_st, is_ld, lui, auipc, fence}; //add operation flag
+			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; //add operation flag
 			is_sub	    = |{sub}; //sub operation flag
 			is_xor	    = |{_xor,xori};//xor operation flag
 			is_and	    = |{_and,andi}; //and operation flag
@@ -166,7 +165,7 @@ module decoder (
 			is_slt      = |{slt,slti};
 			is_sltu     = |{sltu, sltiu};
 			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr}; 
-			is_immop    = |{addi,slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc}; //operation uses immediates? 
+			is_immop    = |{addi,slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri }; //operation uses immediates? 
 			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui}; //determines if operations is going to write 
 			
 

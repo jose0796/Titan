@@ -67,3 +67,4 @@
 `define mret_f21	21'b000000100000000000000
 `define fence           7'b0001111
 `define fe_f3		3'b000
+`define fei_f3		3'b001

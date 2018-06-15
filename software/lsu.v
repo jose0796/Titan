@@ -1,8 +1,8 @@
 
 
 module load_store_unit (
-			input clk,
-			input rst,
+			input clk_i,
+			input rst_i,
 			//INTRUCTION INTERFACE
 			input [31:0]      pc,
 			output reg [31:0] instruction,
@@ -15,15 +15,16 @@ module load_store_unit (
 			output reg [ 3:0] isel_o,
 			output reg        icyc_o,
 			output reg        istb_o,
+			output reg 	  iwe_o,
 		        //DATA PORT INTERFACE
 			input [31:0]      maddr_i,
 			input [31:0]	  mdat_i,
-			input 		  mread,
-			input 		  mwrite,
-			input 		  mbyte,
-			input 		  mhw,
-			input 		  mword,
-			input 		  munsigned,
+			input 		  mread_i,
+			input 		  mwrite_i,
+			input 		  mbyte_i,
+			input 		  mhw_i,
+			input 		  mword_i,
+			input 		  munsigned_i,
 			output reg [31:0] data_o,
 			//DATA MEMORY PORT
 			input [31:0]  	  ddat_i,
@@ -55,15 +56,16 @@ module load_store_unit (
 
 
 		//INSTRUCTION FETCHING PROCESS	
-		always @(posedge clk) begin
-			if (rst) begin 
+		always @(posedge clk_i) begin
+			if (rst_i) begin 
 				//INTRUCTION MEMORY PORT RESET
 				idat_o  = 32'hx; 
 				isel_o   <= 4'hf;
 				i_state  <= i_str;
 				iaddr_o  <= 32'hx;
 				icyc_o   <= 1'b0;
-				istb_o   <= 1'b0; 
+				istb_o   <= 1'b0;
+			       	iwe_o	 <= 1'b0;	
 				//DATA MEMORY PORT RESET
 
 			end else begin
@@ -95,8 +97,8 @@ module load_store_unit (
 
 		//MEMORY ACCESSING PROCESS
 		//
-		always @(posedge clk) begin
-			if (rst) begin 
+		always @(posedge clk_i) begin
+			if (rst_i) begin 
 				ddat_o    <= 32'hx; 
 				daddr_o   <= 32'hx;
 				dwe_o     <= 1'b0; 
@@ -106,11 +108,11 @@ module load_store_unit (
 			end else begin
 				case(d_state)
 					d_str: begin
-						dcyc_o <= ((^{mread,mwrite})? 1'b1: 1'b0);
-						dstb_o <= (^{mread,mwrite})? 1'b1: 1'b0;
-						dwe_o  <= ((mwrite)? 1'b1: 1'b0); 
+						dcyc_o <= ((^{mread_i,mwrite_i})? 1'b1: 1'b0);
+						dstb_o <= (^{mread_i,mwrite_i})? 1'b1: 1'b0;
+						dwe_o  <= ((mwrite_i)? 1'b1: 1'b0); 
 						daddr_o <= maddr_i;
-						d_state <=(^{mread,mwrite})? d_trx : d_str; 
+						d_state <=(^{mread_i,mwrite_i})? d_trx : d_str; 
 						ddat_o  <= wdata;
 						dsel_o  <= wsel_o;
 					end 
@@ -138,32 +140,32 @@ module load_store_unit (
 
 		always @(*) begin
 			case(1'b1)
-				mword: wsel_o = 4'hf;
-				mhw  : wsel_o = 4'h3;
-				mbyte: wsel_o = 4'h1;
+				mword_i: wsel_o = 4'hf;
+				mhw_i  : wsel_o = 4'h3;
+				mbyte_i: wsel_o = 4'h1;
 			endcase
 		end
 
 		always @(negedge dcyc_o) begin
 			case(1'b1)
-				mword: rsel_o = 4'hf;
-				mhw  : rsel_o = 4'h3;
-				mbyte: rsel_o = 4'h1;
+				mword_i: rsel_o = 4'hf;
+				mhw_i  : rsel_o = 4'h3;
+				mbyte_i: rsel_o = 4'h1;
 			endcase
-			runsigned = munsigned; 
+			runsigned = munsigned_i; 
 		end
 
 
 		always @(*) begin
 				case(1'b1)
-					mread: begin
+					mread_i: begin
 						case(rsel_o)
 							4'h1	: data_o = {((runsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
 							4'h3  	: data_o = {((runsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
 							default	: data_o = rdata;
 						endcase
 					end
-					mwrite: begin
+					mwrite_i: begin
 						case(wsel_o) 
 							4'h1	: begin wdata  = mdat_i[7:0];   end
 							4'h3 	: begin wdata  = mdat_i[15:0];  end

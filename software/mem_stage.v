@@ -15,10 +15,10 @@ module mem_stage(
 		  input 		mem_we_i,
 		  input 	[ 5:0]	mem_mem_flags_i,
 		  input 		mem_mem_ex_sel_i,
+		  input 	[31:0]	mem_load_data_i,
 		  input 	[31:0]	mem_csr_data_i,
-		  input 	[31:0]	mem_csr_addr_i,
+		  input 	[11:0]	mem_csr_addr_i,
 		  input 	[ 2:0] 	mem_csr_op_i,
-		  input 		mem_csr_imm_op_i,
 		  input 		mem_exc_addr_if_i,
 		  input			mem_bad_jump_addr_i,
 		  input 		mem_bad_branch_addr_i,
@@ -26,6 +26,8 @@ module mem_stage(
 		  input			mem_syscall_op_i,
 		  //LSU  SIGNALS
 		  input 	[31:0] 	mem_data_i,
+		  input 		mem_cyc_i,
+		  input 		mem_ack_i,
 		  output 		mem_mread_o,
 		  output		mem_mwrite_o,
 		  output 		mem_mbyte_o,
@@ -34,7 +36,13 @@ module mem_stage(
 		  output		mem_munsigned_o,
 		  output 		mem_mdat_o,
 		  output		mem_maddr_o,
+		  //CONTROL SIGNALS 
+
+		  output 		mem_request_stall_o,
+		  
+
 		  //MEM => WB SIGNALS
+		  
 		  output reg 	[31:0] 	wb_pc_o,
 		  output reg 	[31:0] 	wb_instruction_o,
 	 	  output reg 	[31:0]	wb_result_o,
@@ -42,17 +50,30 @@ module mem_stage(
 		  output reg 		wb_we_o,
 		  //CSR SIGNALS
 		  output reg 	[31:0]	wb_csr_data_o,
-		  output reg 	[31:0]	wb_csr_addr_o,
+		  output reg 	[11:0]	wb_csr_addr_o,
 		  output reg 	[ 2:0]	wb_csr_op_o,
-		  output reg 		wb_csr_imm_op_o,
 	 	  //EXCEPTION SIGNALS
-		  output reg 		wb_exc_addr_if_o
+		  output reg 		wb_exc_addr_if_o,
 		  output reg 		wb_bad_jump_addr_o,
 		  output reg 		wb_bad_branch_addr_o,
 		  output reg 		wb_break_op_o,
-		  output reg 		wb_syscall_op_o,
+		  output reg 		wb_syscall_op_o
 		  ); 
 			
+		reg    _mem_stall;
+
+		assign mem_request_stall_o 	= _mem_stall; 
+		assign mem_mwrite_o 		= mem_mem_flags_i[0]; 
+		assign mem_mread_o 		= mem_mem_flags_i[1]; 
+		assign mem_mword_o 		= mem_mem_flags_i[2]; 
+		assign mem_mhw_o   		= mem_mem_flags_i[3]; 
+		assign mem_mbyte_o 		= mem_mem_flags_i[4]; 
+		assign mem_munsigned_o 		= mem_mem_flags_i[5]; 
+
+		always @(negedge mem_ack_i, posedge mem_cyc_i) _mem_stall = (mem_cyc_i)? 1'b1 : ((mem_ack_i)? _mem_stall : 1'b0 ); 
+
+		
+
 
 		reg [31:0] wb_result; 
 		reg [31:0] wb_addr; 
@@ -77,7 +98,6 @@ module mem_stage(
 			wb_csr_data_o 		<= (rst_i | flush) ? 32'h0  : ((stall)? wb_csr_data_o 		: mem_csr_data_i); 
 			wb_csr_addr_o 		<= (rst_i | flush) ? 32'h0  : ((stall)? wb_csr_addr_o 		: mem_csr_addr_i); 
 			wb_csr_op_o 		<= (rst_i | flush) ? 3'h0   : ((stall)? wb_csr_op_o 		: mem_csr_op_i); 
-			wb_csr_imm_op_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_csr_imm_op_o 	: mem_csr_imm_op_i); 
 			wb_exc_addr_if_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_exc_addr_if_o 	: mem_exc_addr_if_i); 
 			wb_bad_jump_addr_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_bad_jump_addr_o 	: mem_bad_jump_addr_i); 
 			wb_bad_branch_addr_o 	<= (rst_i | flush) ? 1'h0   : ((stall)? wb_bad_branch_addr_o 	: mem_bad_branch_addr_i); 
