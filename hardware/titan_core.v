@@ -67,6 +67,9 @@
 		wire 	[31:0]	mem_fwd_drd;
 		wire	[ 1:0]	forward_a_sel;
 		wire 	[ 1:0]	forward_b_sel;
+		wire 		id_inst_addr_misaligned;
+		wire 		id_inst_access_fault;
+	
 		//+OUT
 		wire 	[ 4:0]	id_rs1;
 		wire 	[ 4:0]	id_rs2;	
@@ -96,7 +99,13 @@
 		//EX STAGE 	
 		//+IN
 		wire 		ex_stall;
-		wire 		ex_flush;	
+		wire 		ex_flush;
+		wire 		ex_fence_op;
+		wire 		ex_ret_op;
+		wire 		ex_inst_addr_misaligned;
+		wire 		ex_inst_access_fault;
+		wire 		ex_illegal_inst;
+	
 		//+OUT
 		wire 	[31:0]	mem_pc;
 		wire 	[31:0]	mem_instruction;
@@ -130,9 +139,20 @@
 		wire 		mem_flush; 
 		wire 	[31:0]	mem_store_data;
 		wire 	[31:0]	mem_load_data;
+		wire 		mem_fence_op;
+		wire 		mem_ret_op;
+		wire 		mem_inst_addr_misaligned;
+		wire 		mem_inst_access_fault;
+		wire 		mem_illegal_inst;
+		wire 		mem_load_addr_misaligned;
+		wire 		mem_store_addr_misaligned;
+		wire 		mem_load_access_fault;
+		wire 		mem_store_access_fault;
+	
 		//+OUT
 		
 		/* verilator lint_off UNUSED */ 
+		wire 	[31:0]	wb_result_mem;
 		wire 	[31:0]	wb_pc;
 		wire 	[31:0]	wb_instruction;
 		wire 	[31:0]	wb_result;
@@ -149,6 +169,13 @@
 		/* verilator lint_off UNDRIVEN */ 
 		wire 		wb_fence_op;
 		wire 		wb_ret_op;
+		wire 		wb_inst_addr_misaligned;
+		wire 		wb_inst_access_fault;
+		wire 		wb_illegal_inst;
+		wire 		wb_load_addr_misaligned;
+		wire 		wb_store_addr_misaligned;
+		wire 		wb_load_access_fault;
+		wire 		wb_store_access_fault;
 		wire 		ld_dependence;
 
 		//control signals
@@ -162,10 +189,9 @@
 
 		//CSR signals 
 		//
-		wire 		trap_valid;
-		wire 	[3:0]	exception_code;
-		wire 		interrupt_code;
-		wire 		intruction_ret;
+		wire 	[31:0]	exception_pc;
+		wire 		exception_stall_req_o;
+		wire 		exception_sel_flag_o;
 		wire 	[31:0]	csr_data_o;	
 
 		assign branch_flush_req = take_branch;
@@ -190,15 +216,16 @@
 				// ID => IF
 				.pc_branch_address_i(pc_branch_addr),
 				.pc_jump_address_i(pc_jump_addr),
-				.if_bus_access_fault_i(iwbm_err_i), 
+				.exception_pc_i(exception_pc),
+				.if_inst_access_fault_i(iwbm_err_i), 
 				//----------------------------------
 				//----------------------------------
 				//OUTPUT IF => ID
 				.if_pc_o(if_pc),
 				.id_pc_o(id_pc),
 				.id_instruction_o(id_instruction),
-				.id_exc_addr_if_o(id_exc_addr_if),
-				.id_bus_access_fault_o(id_inst_access_fault)
+				.id_inst_addr_misaligned_o(id_inst_addr_misaligned),
+				.id_inst_access_fault_o(id_inst_access_fault)
 				//----------------------------------
 				); 
 
@@ -213,8 +240,8 @@
 				// ID <= IF
 				.id_pc_i(id_pc),
 				.id_instruction_i(id_instruction),
-				.id_exc_address_if_i(id_exc_addr_if),
-				.id_bus_access_fault_i(id_inst_access_fault),
+				.id_inst_addr_misaligned_i(id_inst_addr_misaligned),
+				.id_inst_access_fault_i(id_inst_access_fault),
 				//---------------------------------------
 				//ID <= WB
 				.wb_data_i(wb_result),		
@@ -249,15 +276,18 @@
 				.ex_we_o(ex_we),
 				.ex_mem_flags_o(ex_mem_flags),
 				.ex_mem_ex_sel_o(ex_mem_ex_sel),
-				.ex_bad_jump_addr_o(ex_bad_jump_addr),
-				.ex_bad_branch_addr_o(ex_bad_branch_addr),
+				//EXCEPTIONS SIGNALS
+				.ex_illegal_inst_o(ex_illegal_inst),
+				.ex_inst_addr_misaligned_o(ex_inst_addr_misaligned),
+				.ex_inst_access_fault_o(ex_inst_access_fault),
+				.ex_inst_fence_o(ex_inst_fence),
+				.ex_inst_xret_o(ex_inst_xret),
 				.ex_break_op_o(ex_break_op),
 				.ex_syscall_op_o(ex_syscall_op),
+				//CSR SIGNALS
 				.ex_csr_data_o(ex_csr_data),
 				.ex_csr_op_o(ex_csr_op),
-				.ex_csr_addr_o(ex_csr_addr),
-				.ex_exc_addr_if_o(ex_exc_addr_if),
-				.ex_bus_access_fault_o(ex_inst_access_fault)
+				.ex_csr_addr_o(ex_csr_addr)
 				//---------------------------------------
 				); 
 
@@ -278,34 +308,38 @@
 				.ex_we_i(ex_we),
 				.ex_mem_flags_i(ex_mem_flags),
 				.ex_mem_ex_sel_i(ex_mem_ex_sel),
-				.ex_exc_addr_if_i(ex_exc_addr_if),
-				.ex_bus_access_fault_i(ex_inst_access_fault),
-				.ex_bad_jump_addr_i(ex_bad_jump_addr),
-				.ex_bad_branch_addr_i(ex_bad_branch_addr),
+				.ex_illegal_inst_i(ex_illegal_inst),
+				.ex_inst_addr_misaligned_i(ex_inst_addr_misaligned),
+				.ex_inst_access_fault_i(ex_inst_access_fault),
+				.ex_inst_fence_i(ex_inst_fence),
+				.ex_inst_xret_i(ex_inst_xret),
 				.ex_break_op_i(ex_break_op),
 				.ex_syscall_op_i(ex_syscall_op),
 				.ex_csr_addr_i(ex_csr_addr),
 				.ex_csr_data_i(ex_csr_data),
 				.ex_csr_op_i(ex_csr_op),
 				//OUTPUTS
+				.ex_fwd_dat_o(ex_fwd_drd),		// EX => FWD
 				.mem_pc_o(mem_pc),
 				.mem_instruction_o(mem_instruction),	
-				.ex_fwd_dat_o(ex_fwd_drd),		// EX => FWD
 				.mem_store_data_o(mem_store_data), 	//from port B of ALU
 				.mem_result_o(mem_result),		//RESULT from ALU
 				.mem_waddr_o(mem_waddr),
 				.mem_we_o(mem_we),
 				.mem_mem_flags_o(mem_mem_flags),
 				.mem_mem_ex_sel_o(mem_mem_ex_sel),
-				.mem_bad_jump_addr_o(mem_bad_jump_addr),
-				.mem_bad_branch_addr_o(mem_bad_branch_addr),
-				.mem_break_op_o(mem_break_op),
-				.mem_syscall_op_o(mem_syscall_op),
+				//EXCEPTIONS
+				.mem_illegal_inst_o(ex_illegal_inst),
+				.mem_inst_addr_misaligned_o(ex_inst_addr_misaligned),
+				.mem_inst_access_fault_o(ex_inst_access_fault),
+				.mem_inst_fence_o(ex_inst_fence),
+				.mem_inst_xret_o(ex_inst_xret),
+				.mem_break_op_o(ex_break_op),
+				.mem_syscall_op_o(ex_syscall_op),
+				//CSR signals
 				.mem_csr_data_o(mem_csr_data),
 				.mem_csr_op_o(mem_csr_op),
-				.mem_csr_addr_o(mem_csr_addr),
-				.mem_exc_addr_if_o(mem_exc_addr_if),
-				.mem_bus_access_fault_o(mem_inst_access_fault)       
+				.mem_csr_addr_o(mem_csr_addr)
 			);
 
 
@@ -339,14 +373,15 @@
 				.mem_we_i(mem_we),
 				.mem_mem_flags_i(mem_mem_flags),
 				.mem_mem_ex_sel_i(mem_mem_ex_sel),
+				//CSR signals
 				.mem_csr_data_i(mem_csr_data),
 				.mem_csr_addr_i(mem_csr_addr),
 				.mem_csr_op_i(mem_csr_op),
-				.mem_exc_addr_if_i(mem_exc_addr_if),
-				.mem_bus_access_fault_i(mem_inst_access_fault),
-				.mem_mbus_access_fault_i(dwbm_err_i),
-				.mem_bad_jump_addr_i(mem_bad_jump_addr),
-				.mem_bad_branch_addr_i(mem_bad_branch_addr),
+				.mem_illegal_inst_i(mem_illegal_inst),
+				.mem_inst_addr_misaligned_i(mem_inst_addr_misaligned),
+				.mem_inst_access_fault_i(mem_inst_access_fault),
+				.mem_inst_fence_i(mem_inst_fence),
+				.mem_inst_xret_i(mem_inst_xret),
 				.mem_break_op_i(mem_break_op),
 				.mem_syscall_op_i(mem_syscall_op),
 				//----------------------------------------
@@ -354,7 +389,7 @@
 				.mem_request_stall_o(mem_stall_req),
 				//----------------------------------------
 				// MEM => WB
-				.wb_result_o(wb_result),
+				.wb_result_o(wb_result_mem),
 				.wb_waddr_o(wb_waddr),
 				.wb_we_o(wb_we),
 				//----------------------------------------
@@ -364,17 +399,27 @@
 				.wb_csr_data_o(wb_csr_data),
 				.wb_csr_addr_o(wb_csr_addr),
 				.wb_csr_op_o(wb_csr_op),
-				// MEM => EXCEPTION UNIT 
-				.wb_exc_addr_if_o(wb_exc_addr_if),
-				.wb_bus_access_fault_o(wb_inst_access_fault),
-				.wb_mbus_access_fault_o(wb_mem_access_fault),
-				.wb_bad_jump_addr_o(wb_bad_jump_addr),
-				.wb_bad_branch_addr_o(wb_bad_branch_addr),
+				// MEM => EXCEPTION UNIT
+				.wb_illegal_inst_o(wb_illegal_inst), 
+				.wb_inst_addr_misaligned_o(wb_inst_addr_misaligned),
+				.wb_inst_access_fault_o(wb_inst_access_fault),
+				.wb_load_access_fault_o(wb_load_access_fault),
+				.wb_store_access_fault_o(wb_store_access_fault),
+				.wb_load_addr_misaligned_o(wb_load_addr_misaligned),
+				.wb_store_addr_misaligned_o(wb_store_addr_misaligned),
+				.wb_fence_op_o(wb_fence_op),
+				.wb_xret_op_o(wb_xret_op),
 				.wb_break_op_o(wb_break_op),
 				.wb_syscall_op_o(wb_syscall_op)
 				/* verilator lint_on UNUSED */
 				//---------------------------------------
 				); 
+
+		titan_mux21 mux21 (
+				   .in_0(wb_result_mem),
+				   .in_1(csr_data_o),
+				   .sel(~(wb_csr_op == 0)),
+				   .out(wb_result)	); 
 		
 		titan_forwarding_unit FWD (
 				// ID => FWDU
@@ -453,32 +498,38 @@
 				.mem_flush_o(mem_flush),
 				.ex_nop_o(ex_nop) 		); 
 
-		titan_csr # (	.ENABLE_COUNTERS(ENABLE_COUNTERS),
-			.RESET_ADDR(RESET_ADDR) 	
-		    ) CSR (
-			.clk_i(clk_i),
-			.rst_i(rst_i),
-			.xint_meip_i(xint_meip_i),
-			.xint_mtip_i(xint_mtip_i),
-			.xint_msip_i(xint_msip_i),
-			.csr_addr_i(wb_csr_addr),
-			.csr_dat_i(wb_csr_data),
-			.csr_op_i(wb_csr_op),
-			.csr_rd_i(wb_waddr),
-			.exception_pc_i(wb_pc),
-			.exception_inst_i(wb_instruction),
-			.trap_valid_i(trap_valid),
-			.exception_code_i(exception_code),
-			.interrupt_code_i(interrupt_code),
-			.instruction_ret_i(intruction_ret),
-			.inst_fence(wb_fence_op),
-			.inst_xret(wb_ret_op),
-			.xcall(wb_syscall_op),
-			.xbreak(wb_break_op),
-			.csr_dat_o(csr_data_o)	); 
-
-		
+		titan_csr_exception_unit # (	
 			
+				.ENABLE_COUNTERS(ENABLE_COUNTERS),
+				.RESET_ADDR(RESET_ADDR) 	
+		) CSR (
+				//INPUTS
+				.clk_i(clk_i),
+				.rst_i(rst_i),
+				.csr_addr_i(wb_csr_addr),
+				.csr_dat_i(wb_csr_data),
+				.csr_op_i(wb_csr_op),
+				.xint_meip_i(xint_meip_i),
+				.xint_mtip_i(xint_mtip_i),
+				.xint_msip_i(xint_msip_i),
+				.exception_pc_i(wb_pc),
+				.exception_inst_i(wb_instruction),
+				.xcall(wb_syscall_op),
+				.xbreak(wb_break_op),
+				.inst_addr_misaligned_i(wb_inst_addr_misaligned),
+				.inst_access_fault_i(wb_inst_access_fault),
+				.illegal_inst_i(wb_illegal_inst_i),
+				.load_addr_misaligned_i(wb_load_addr_misaligned),
+				.load_access_fault_i(wb_load_access_fault),
+				.store_addr_misaligned_i(wb_store_addr_misaligned),
+				.store_access_fault_i(wb_store_access_fault),
+				.inst_fence(wb_fence_op),
+				.inst_xret(wb_ret_op),
+				//OUTPUTS
+				.exception_stall_req_o(exception_stall_req),
+				.exception_pc_o(exception_pc),
+				.exception_sel_flag_o(exception_sel_flag),
+				.csr_dat_o(csr_data_o)	); 
 
 
 endmodule

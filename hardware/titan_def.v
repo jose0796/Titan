@@ -68,3 +68,4 @@
 `define fence           7'b0001111
 `define fe_f3		3'b000
 `define fei_f3		3'b001
+`define ret		7'b1110011

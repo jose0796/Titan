@@ -13,8 +13,8 @@ module titan_id_stage(
 		 input 		id_flush_i,
 		 input 	[31:0] 	id_pc_i,
 		 input 	[31:0] 	id_instruction_i,
-		 input 		id_exc_address_if_i,
-		 input 		id_bus_access_fault_i,
+		 input 		id_inst_address_misaligned_i,
+		 input 		id_inst_access_fault_i,
 		 input  [31:0] 	wb_data_i,
 		 input  [ 4:0] 	wb_address_i,
 		 input  	wb_we_i,
@@ -38,15 +38,16 @@ module titan_id_stage(
 		 output 	ex_we_o,	
 		 output [ 5:0] 	ex_mem_flags_o,
 		 output 	ex_mem_ex_sel_o,
-		 output 	ex_bad_jump_addr_o,
-		 output 	ex_bad_branch_addr_o, 
+		 output 	ex_illegal_inst_o,
+		 output 	ex_inst_addr_misaligned_o,
+		 output 	ex_inst_access_fault_o,
+		 output 	ex_fence_op_o,
+		 output 	ex_xret_op_o,
 		 output 	ex_break_op_o,
 		 output 	ex_syscall_op_o,
 		 output	[31:0]	ex_csr_data_o,
 		 output [2:0] 	ex_csr_op_o,
 		 output [11:0]  ex_csr_addr_o,
-		 output 	ex_exc_addr_if_o,
-		 output 	ex_bus_access_fault_o
 		 );
 
 	wire [31:0] 	muxa_i;
@@ -80,7 +81,14 @@ module titan_id_stage(
 	wire [11:0]	csr_addr;
 	wire [2:0] 	csr_op;
 	wire 		csr_imm_op;
+	
+	wire 		fence_op;
+	wire 		xret_op;
+	wire 		illegal_inst; 
 
+
+
+	
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
 	assign take_jump_o		= jump_op;
 	assign id_rs1_o 		= rs1;
@@ -89,8 +97,6 @@ module titan_id_stage(
 	assign pc_jump			=  id_pc_i  + _imm;
 	assign pc_jump_address_o 	= {pc_jump[31:1], 1'b0}; 
 	assign pc_branch_address_o   	= _imm + id_pc_i; 
-	assign bad_jump_addr       	= (jump_op)?(~(pc_jump_address_o[1:0] == 0)): 1'b0;
-	assign bad_branch_addr		= (branch_op)?(~(pc_branch_address_o[1:0] == 0)):1'b0;
 	assign csr_data			= (csr_imm_op)? port_b : port_a;  
 
 	titan_mux21 PORT_A_MUX (
@@ -151,10 +157,13 @@ module titan_id_stage(
 			.imm(imm),
 			.portb_sel(portb_sel),
 			.porta_sel(porta_sel),
-			.syscall_op(syscall_op),
 			.branch_op(branch_op),
 			.jump_op(jump_op),
 			.jalr_op(jalr_op),
+			.illegal_inst(illegal_inst),
+			.fence_op(fence_op),
+			.xret_op(xret_op),
+			.syscall_op(syscall_op),
 			.break_op(break_op),
 		        .csr_addr(csr_addr),	
 			.csr_op(csr_op),
@@ -173,8 +182,11 @@ module titan_id_stage(
 			.id_we(we),
 			.id_mem_flags(mem_flags),
 			.id_mem_ex_sel(mem_ex_sel),
-			.id_bad_jump_addr(bad_jump_addr),
-			.id_bad_branch_addr(bad_branch_addr),
+			.id_illegal_inst(illegal_inst),
+			.id_inst_addr_misaligned(id_inst_addr_misaligned_i),
+			.id_inst_access_fault(id_inst_access_fault_i),
+			.id_fence_op(fence_op),
+			.id_xret_op(xret_op),
 			.id_break_op(break_op),
 			.id_syscall_op(syscall_op),
 			.id_csr_data(csr_data),
@@ -192,8 +204,11 @@ module titan_id_stage(
 			.ex_we(ex_we_o),
 			.ex_mem_flags(ex_mem_flags_o),
 			.ex_mem_ex_sel(ex_mem_ex_sel_o),
-			.ex_bad_jump_addr(ex_bad_jump_addr_o),
-			.ex_bad_branch_addr(ex_bad_branch_addr_o),
+			.ex_illegal_inst(ex_illegal_inst_o),
+			.ex_inst_addr_misaligned(ex_inst_addr_misaligned_o),
+			.ex_inst_access_fault(ex_inst_access_fault_o),
+			.ex_fence_op(ex_fence_op_o),
+			.ex_xret_op(ex_xret_op_o),
 			.ex_break_op(ex_break_op_o),
 			.ex_syscall_op(ex_syscall_op_o),
 			.ex_csr_data(ex_csr_data_o),

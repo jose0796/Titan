@@ -11,7 +11,6 @@ module titan_csr #(
 		input 	[11:0]		csr_addr_i,
 	       	input 	[31:0]		csr_dat_i,
 		input 	[ 2:0]		csr_op_i,
-		input 	[ 4:0]		csr_rd_i,
 		input 	[31:0]		exception_pc_i,
 		input 	[31:0]		exception_inst_i,
 		input 			trap_valid_i,
@@ -92,7 +91,7 @@ module titan_csr #(
 		mip	= {20'b0, xint_meip_i, 3'b0, xint_mtip_i, 3'b0, xint_msip_i, 3'b0};
 		mie	= {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
 	        mcause  = {mcause_int, 27'b0, mcause_exc}; 	
-		wen 	= csr_rd_i != 0; 
+		wen 	= ~(csr_op_i == 0); 
 	end 
 
 	always @(*) begin
@@ -103,7 +102,8 @@ module titan_csr #(
 		is_mimpid 	= csr_addr_i == MIMPID; 
 		is_mstatus 	= csr_addr_i == MSTATUS; 
 		is_mie 		= csr_addr_i == MIE; 
-		is_mtvec 	= csr_addr_i == MSCRATCH; 
+		is_mtvec 	= csr_addr_i == MTVEC;
+	       	is_mscratch	= csr_addr_i == MSCRATCH;	
 		is_mepc 	= csr_addr_i == MEPC; 
 		is_mcause 	= csr_addr_i == MCAUSE; 
 		is_mtval 	= csr_addr_i == MTVAL;
@@ -149,11 +149,12 @@ module titan_csr #(
 		end
 	end 
 
-	always @(posedge clk_i) begin
+	always @(*) begin
 		case(csr_op_i)
-			3'b010: csr_wdata <= csr_dat_o | csr_dat_i;
-			3'b100: csr_wdata <= csr_dat_o & ~csr_dat_i;
-			default: csr_wdata <= csr_dat_i;
+			3'b001: csr_wdata = csr_dat_i;
+			3'b010: csr_wdata = csr_dat_o | csr_dat_i;
+			3'b100: csr_wdata = csr_dat_o & ~csr_dat_i;
+			default: csr_wdata = 32'b0;
 		endcase 
 	end 
 

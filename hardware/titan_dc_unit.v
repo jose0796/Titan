@@ -3,8 +3,6 @@
 
 module titan_dc_unit (
 		input 		[31:0] 	instruction,
-	        //IF STATE SIGNALS
-//		output pc_branch_address,
 		//ID STAGE SIGNALS
 		output 		[4:0] 	rs1, 
 		output 		[4:0] 	rs2,
@@ -19,6 +17,9 @@ module titan_dc_unit (
 		output reg 	[31:0] 	imm,
 		output reg 		portb_sel,
 		output reg 		porta_sel,
+		output 			illegal_inst,
+		output 			xret_op,
+		output 			fence_op,
 		output 			syscall_op,
 		output 			branch_op,
 		output 			jump_op,
@@ -52,6 +53,9 @@ module titan_dc_unit (
 		assign rs1 	    	= (lui)? 5'b0 : inst[19:15]; 
 		assign rs2 	    	= inst[24:20];
 		assign rd  	    	= (is_st)? 5'b0: inst[11:7]; 
+		assign illegal_inst	= illegal;
+		assign fence_op		= fence & fencei;
+		assign xret_op		= xret;
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
 	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
@@ -60,7 +64,7 @@ module titan_dc_unit (
 		assign mem_ex_sel  	= mem_ex_s;
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
-		assign csr_op	    	= {rc, rs, rw}; 
+		assign csr_op	    	= (rs1 == 0 & |{rc,rs})? 3'b0: {rc, rs, rw}; 
 		assign csr_addr		= inst[31:20]; 
 		
 		//TYPES OF INSTRUCTIONS
@@ -71,7 +75,8 @@ module titan_dc_unit (
 		reg sb, sh, sw;
 		reg addi, slti, sltiu, xori, ori, andi, slli, srli, srai;
 		reg add, sub, sll, slt, sltu, _xor, srl, sra, _or, _and;
-		//reg fence, fencei; 
+		reg fence, fencei; 
+		reg xret;
 		reg rw, rs, rc, rwi, rsi, rci;
 		reg call, _break;
 
@@ -127,8 +132,8 @@ module titan_dc_unit (
 			srl	= opcode == `alu_op && func3 == `sr_f3      && func7 == `alu_f7;
 			sra	= opcode == `alu_op && func3 == `sr_f3      && func7 == `sra_f7;
 			//SPECIAL OPERATIONS
-			//fence   = opcode == `fence  && func3 == `fe_f3;
-		        //fencei  = opcode == `fence  && func3 == `fei_f3;
+			fence   = opcode == `fence  && func3 == `fe_f3;
+		        fencei  = opcode == `fence  && func3 == `fei_f3;
 			rw	= opcode == `sp_op  && func3 == `rw_f3; 
 			rs	= opcode == `sp_op  && func3 == `rs_f3;
 			rc	= opcode == `sp_op  && func3 == `rc_f3;
@@ -137,7 +142,7 @@ module titan_dc_unit (
 			rci	= opcode == `sp_op  && func3 == `rci_f3;
 			call	= opcode == `sp_op  && inst[31:7] == `syscall;
 			_break	= opcode == `sp_op  && inst[31:7] == `break; 
-
+			xret	= opcode == `ret    && inst[31:30] == 2'b0 && inst[27:7] == 21'b0_0000_0100_0000_0000_0000;
 			//---mem flags------
 			is_word     = |{lw,sw};
 			is_hw	    = |{lh,lhu,sh};

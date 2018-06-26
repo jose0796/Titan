@@ -44,24 +44,24 @@ module titan_idex_register (
 
 
 	always @(posedge clk) begin
-		ex_instruction 	    <= ((rst|flush)? 32'b0 : ((stall)? ex_instruction 		: id_instruction)); 
-		ex_pc 	   	    <= ((rst|flush)? 32'b0 : ((stall)? ex_pc 			: id_pc)); 
-		ex_porta 	    <= ((rst|flush)? 32'b0 : ((stall)? ex_porta 		: id_porta)); 
-	        ex_portb 	    <= ((rst|flush)? 32'b0 : ((stall)? ex_portb 		: id_portb)); 
-		ex_alu_op	    <= ((rst|flush)? 4'b0  : ((stall)? ex_alu_op		: id_alu_op));
-		ex_we    	    <= ((rst|flush)? 1'b0  : ((stall)? ex_we    		: id_we   ));
-		ex_mem_flags	    <= ((rst|flush)? 6'b0  : ((stall)? ex_mem_flags	 	: id_mem_flags)); 
-		ex_mem_ex_sel	    <= ((rst|flush)? 1'b0  : ((stall)? ex_mem_ex_sel	  	: id_mem_ex_sel)); 
-		ex_bad_jump_addr    <= ((rst|flush)? 1'b0  : ((stall)? ex_bad_jump_addr 	: id_bad_jump_addr));
-		ex_bad_branch_addr  <= ((rst|flush)? 1'b0  : ((stall)? ex_bad_branch_addr  	: id_bad_branch_addr));
-		ex_break_op	    <= ((rst|flush)? 1'b0  : ((stall)? ex_break_op 	  	: id_break_op));
-		ex_syscall_op       <= ((rst|flush)? 1'b0  : ((stall)? ex_syscall_op       	: id_syscall_op));
-		ex_csr_op	    <= ((rst|flush)? 3'b0  : ((stall)? ex_csr_op		: id_csr_op )); 
-		ex_csr_addr	    <= ((rst|flush)? 12'b0 : ((stall)? ex_csr_addr		: id_csr_addr )); 
-		ex_csr_data	    <= ((rst|flush)? 32'b0 : ((stall)? ex_csr_data 	  	: id_csr_data)); 
-		ex_waddr 	    <= ((rst|flush)? 5'b0  : ((stall)? ex_waddr			: id_waddr)); 
-		ex_exc_addr_if      <= ((rst|flush)? 1'b0  : ((stall)? ex_exc_addr_if      	: id_exc_addr_if));
-		ex_bus_access_fault <= ((rst|flush)? 1'b0  : ((stall)? ex_bus_access_fault     	: id_bus_access_fault));
+		ex_instruction 	    <= ((rst|flush)? 32'h33 : ((stall)? ex_instruction 		: id_instruction)); 
+		ex_pc 	   	    <= ((rst|flush)? 32'b0  : ((stall)? ex_pc 			: id_pc)); 
+		ex_porta 	    <= ((rst|flush)? 32'b0  : ((stall)? ex_porta 		: id_porta)); 
+	        ex_portb 	    <= ((rst|flush)? 32'b0  : ((stall)? ex_portb 		: id_portb)); 
+		ex_alu_op	    <= ((rst|flush)? 4'b0   : ((stall)? ex_alu_op		: id_alu_op));
+		ex_we    	    <= ((rst|flush)? 1'b0   : ((stall)? ex_we    		: id_we   ));
+		ex_mem_flags	    <= ((rst|flush)? 6'b0   : ((stall)? ex_mem_flags	 	: id_mem_flags)); 
+		ex_mem_ex_sel	    <= ((rst|flush)? 1'b0   : ((stall)? ex_mem_ex_sel	  	: id_mem_ex_sel)); 
+		ex_bad_jump_addr    <= ((rst|flush)? 1'b0   : ((stall)? ex_bad_jump_addr 	: id_bad_jump_addr));
+		ex_bad_branch_addr  <= ((rst|flush)? 1'b0   : ((stall)? ex_bad_branch_addr  	: id_bad_branch_addr));
+		ex_break_op	    <= ((rst|flush)? 1'b0   : ((stall)? ex_break_op 	  	: id_break_op));
+		ex_syscall_op       <= ((rst|flush)? 1'b0   : ((stall)? ex_syscall_op       	: id_syscall_op));
+		ex_csr_op	    <= ((rst|flush)? 3'b0   : ((stall)? ex_csr_op		: id_csr_op )); 
+		ex_csr_addr	    <= ((rst|flush)? 12'b0  : ((stall)? ex_csr_addr		: id_csr_addr )); 
+		ex_csr_data	    <= ((rst|flush)? 32'b0  : ((stall)? ex_csr_data 	  	: id_csr_data)); 
+		ex_waddr 	    <= ((rst|flush)? 5'b0   : ((stall)? ex_waddr		: id_waddr)); 
+		ex_exc_addr_if      <= ((rst|flush)? 1'b0   : ((stall)? ex_exc_addr_if      	: id_exc_addr_if));
+		ex_bus_access_fault <= ((rst|flush)? 1'b0   : ((stall)? ex_bus_access_fault     : id_bus_access_fault));
 	end
 endmodule
 

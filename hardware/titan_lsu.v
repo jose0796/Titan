@@ -54,7 +54,7 @@ module titan_lsu (
 	        reg [1:0]  d_state;	
 		reg 	   kill;
 
-		assign istall_o = (~rst_i &  kill);
+		assign istall_o = (~rst_i & ~iack_i | kill);
 
 		always @(*) begin
 			iaddr_o = pc;
