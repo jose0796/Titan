@@ -150,9 +150,9 @@ module titan_lsu (
 
 		always @(*) begin
 			case(1'b1)
+				mbyte_i: wsel_o = 4'h1 << maddr_i[1:0];
+				mhw_i  : wsel_o = (maddr_i[1])? 4'b1100: 4'b0011;
 				mword_i: wsel_o = 4'hf;
-				mhw_i  : wsel_o = 4'h3;
-				mbyte_i: wsel_o = 4'h1;
 			endcase
 		end
 
@@ -160,8 +160,8 @@ module titan_lsu (
 			if(mread_i) begin
 				case(1'b1)
 					mword_i: rsel_o = 4'hf;
-					mhw_i  : rsel_o = 4'h3;
-					mbyte_i: rsel_o = 4'h1;
+					mhw_i  : rsel_o = (maddr_i[1])? 4'b1100: 4'b0011;
+					mbyte_i: rsel_o = 4'b1 << maddr_i[1:0];
 				endcase
 				runsigned = munsigned_i; 
 			end 
@@ -173,14 +173,18 @@ module titan_lsu (
 					mread_i: begin
 						case(rsel_o)
 							4'h1	: data_o = {((runsigned)? 24'h0: {24{rdata[7]}}), rdata[7:0]}; 
+							4'h2	: data_o = {((runsigned)? 24'h0: {24{rdata[15]}}), rdata[15:8]}; 
+							4'h4	: data_o = {((runsigned)? 24'h0: {24{rdata[24]}}), rdata[24:16]}; 
+							4'h8	: data_o = {((runsigned)? 24'h0: {24{rdata[31]}}), rdata[31:25]}; 
 							4'h3  	: data_o = {((runsigned)? 16'h0: {16{rdata[15]}}), rdata[15:0]};
+							4'hc	: data_o = {((runsigned)? 16'h0: {16{rdata[31]}}), rdata[31:16]};
 							default	: data_o = rdata;
 						endcase
 					end
 					mwrite_i: begin
 						case(wsel_o)
 						       /* verilator lint_off WIDTH */
-							4'h1	: begin wdata  = mdat_i[7:0];   end
+							4'h1	: begin wdata  = {((munsigned_i)? {24{mdat_i[7][mdat_i[7:0];   end
 							4'h3 	: begin wdata  = mdat_i[15:0];  end
 							default	: begin wdata  = mdat_i[31:0];  end
 							/*verilator lint_on WIDTH */

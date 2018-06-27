@@ -74,6 +74,7 @@ module titan_id_stage(
 	wire 		jump_op;
 	wire [31:0]	pc_jump;
 	wire 		branch_op;
+	wire 		load_store_op;
 	wire 		take_branch;
 	wire 		break_op;
 	wire 		syscall_op;
@@ -81,7 +82,6 @@ module titan_id_stage(
 	wire [11:0]	csr_addr;
 	wire [2:0] 	csr_op;
 	wire 		csr_imm_op;
-	
 	wire 		fence_op;
 	wire 		xret_op;
 	wire 		illegal_inst; 
@@ -160,6 +160,7 @@ module titan_id_stage(
 			.branch_op(branch_op),
 			.jump_op(jump_op),
 			.jalr_op(jalr_op),
+			.load_store_op(load_store_op),
 			.illegal_inst(illegal_inst),
 			.fence_op(fence_op),
 			.xret_op(xret_op),

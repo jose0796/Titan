@@ -19,6 +19,7 @@ module titan_dc_unit (
 		output reg 		porta_sel,
 		output 			illegal_inst,
 		output 			xret_op,
+		output 			load_store_op,
 		output 			fence_op,
 		output 			syscall_op,
 		output 			branch_op,
@@ -56,6 +57,7 @@ module titan_dc_unit (
 		assign illegal_inst	= illegal;
 		assign fence_op		= fence & fencei;
 		assign xret_op		= xret;
+		assign load_store_op	= is_ld;
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
 	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
