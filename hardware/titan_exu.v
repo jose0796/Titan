@@ -27,7 +27,7 @@ module titan_exu (
 			4'h6: 	 result = sa >>> b;
 			4'h7: 	 result = (a >> b);
 			4'h8: 	 result = ({31'b0,(sa < sb)});
-			4'h9: 	 result = ({31'b0,(a < b)});
+			4'h9: 	 result = ({31'b0,(a <	 b)});
 			default: result = 32'b0;
 		endcase
 	end

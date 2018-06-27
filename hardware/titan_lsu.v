@@ -104,11 +104,17 @@ module titan_lsu (
 
 		assign dstall_o = (^{mread_i,mwrite_i} & ~dack_i);
 
+
+		always @(*) begin
+			daddr_o = maddr_i;
+			rdata	= ddat_i;
+		end
+
+
 		//MEMORY ACCESSING PROCESS
 		always @(posedge clk_i) begin
 			if (rst_i) begin 
 				ddat_o    <= 32'hx; 
-				daddr_o   <= 32'hx;
 				dwe_o     <= 1'b0; 
 				dcyc_o    <= 1'b0;
 				dstb_o    <= 1'b0; 
@@ -119,16 +125,12 @@ module titan_lsu (
 						dcyc_o <= ((^{mread_i,mwrite_i})? 1'b1: 1'b0);
 						dstb_o <= (^{mread_i,mwrite_i})? 1'b1: 1'b0;
 						dwe_o  <= ((mwrite_i)? 1'b1: 1'b0); 
-						daddr_o <= maddr_i;
-						d_state <=(^{mread_i,mwrite_i})? d_trx : d_str; 
+						d_state <= d_str; 
 						ddat_o  <= wdata;
 						dsel_o  <= wsel_o;
-					end 
-					d_trx: begin //load state
 						if(dack_i) begin
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
-							rdata  	<= ddat_i;
 							d_state <= d_str;
 						end else if(derr_i) begin
 							dcyc_o <= 1'b0;
@@ -154,13 +156,15 @@ module titan_lsu (
 			endcase
 		end
 
-		always @(negedge dcyc_o) begin
-			case(1'b1)
-				mword_i: rsel_o <= 4'hf;
-				mhw_i  : rsel_o <= 4'h3;
-				mbyte_i: rsel_o <= 4'h1;
-			endcase
-			runsigned <= munsigned_i; 
+		always @(*) begin
+			if(mread_i) begin
+				case(1'b1)
+					mword_i: rsel_o = 4'hf;
+					mhw_i  : rsel_o = 4'h3;
+					mbyte_i: rsel_o = 4'h1;
+				endcase
+				runsigned = munsigned_i; 
+			end 
 		end
 
 

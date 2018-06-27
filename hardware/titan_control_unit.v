@@ -30,11 +30,11 @@ module titan_control_unit (
 		assign ex_nop_o = fwd_stall_req_i; 
 		
 		//FLUSHES
-		assign if_kill_o  = jump_flush_req_i | branch_flush_req_i;
-		assign if_flush_o = (rst_i)? 1'b1 : ((if_kill_o | exception_stall_req_i)? 1'b1: 1'b0); 
-		assign id_flush_o =  rst_i | exception_stall_req_i;
-		assign ex_flush_o =  rst_i | exception_stall_req_i;
-		assign mem_flush_o =  rst_i | exception_stall_req_i;
+		assign if_kill_o   = jump_flush_req_i | branch_flush_req_i;
+		assign if_flush_o  = (rst_i)? 1'b1 : ((if_kill_o | exception_stall_req_i)? 1'b1: 1'b0); 
+		assign id_flush_o  =  rst_i | exception_stall_req_i ;
+		assign ex_flush_o  =  rst_i | exception_stall_req_i ;
+		assign mem_flush_o =  rst_i | exception_stall_req_i ;
 
 		always @(*) begin
 			case(1'b1)

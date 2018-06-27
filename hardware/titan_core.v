@@ -12,7 +12,7 @@
 
 	module titan_core #(
 			parameter [31:0] HART_ID = 0,
-			parameter [31:0] RESET_ADDR = 32'h8000_0000,
+			parameter [31:0] RESET_ADDR = 32'h0000_0000,
 			parameter [0:0]  ENABLE_COUNTERS = 1,
 			parameter [0:0]	 ENABLE_M_ISA = 0,
 			parameter 	 UCONTROL = "ucontrol.list" 

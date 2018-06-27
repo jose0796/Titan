@@ -168,7 +168,7 @@ module titan_dc_unit (
 			is_sr	    = |{sra, srl, srai, srli}; //shift rights operations flag
 			is_slt      = |{slt,slti};
 			is_sltu     = |{sltu, sltiu};
-			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr}; 
+			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr, is_slt, is_sltu}; 
 			is_csr	    = |{rw,rs,rc,is_csri};
 			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri };
 			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr}; //determines if operations is going to write 

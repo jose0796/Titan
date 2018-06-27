@@ -88,7 +88,7 @@ module titan_id_stage(
 	wire 	[31:0]	id_store_data;
 
 
-	assign id_store_data		= drs2;
+	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
 	assign take_jump_o		= jump_op;
 	assign id_rs1_o 		= rs1;
