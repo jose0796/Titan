@@ -9,10 +9,12 @@ module titan_csr_exception_unit #(
 		input 	[11:0]		csr_addr_i,
 	       	input 	[31:0]		csr_dat_i,
 		input 	[ 2:0]		csr_op_i,
+		input 	[ 4:0]		csr_rs1_i,
 		//EXCEPTION UNIT SIGNALS
 		input 			xint_meip_i,
 		input 			xint_mtip_i,
 		input 			xint_msip_i,
+		/* verilator lint_off UNUSED*/
 		input 	[31:0]		exception_pc_i,
 		input 	[31:0]		exception_inst_i,
 		input 			xcall_i,
@@ -28,6 +30,7 @@ module titan_csr_exception_unit #(
 		input 			inst_xret_i,
 		output 			exception_stall_req_o,
 		output reg [31:0]	exception_pc_o,
+		/* verilator lint_off UNDRIVEN */
 		output 			exception_sel_flag_o,
 		output reg [31:0]	csr_dat_o	); 
 
@@ -97,59 +100,100 @@ module titan_csr_exception_unit #(
 	reg		is_mcycleh, is_minstreth, is_mscratch; 
 
 	reg		trap_valid;
-	reg		exception_code
+	reg	[3:0]	exception_code;
+	reg		exception_stall;
 
-	always @(*) begin
+
+/*	always @(*) begin
 		case(1'b1)
-			inst_access_fault: 	exception_code = INST_ACCESS_FAULT;
-			inst_addr_misaligned: 	exception_code = INST_ADDR_MISALIGNED;
-			illegal_inst: 		exception_code = ILLEGAL_INST;
-			xcall: 			exception_code = MCALL;
-			xbreak: 		exception_code = BREAKPOINT;
-			load_access_fault: 	exception_code = LOAD_ACCESS_FAULT;
-			load_addr_misaligned: 	exception_code = LOAD_ADDR_MISALIGNED;
-			store_access_fault: 	exception_code = STORE_ACCESS_FAULT;
-			store_addr_misaligned: 	exception_code = STORE_ADDR_MISALIGNED;
-			default: 		exception_code = 4'h0;
+			inst_access_fault_i: 	exception_code = INST_ACCESS_FAULT;
+			inst_addr_misaligned_i: exception_code = INST_ADDR_MISALIGNED;
+			illegal_inst_i:		exception_code = ILLEGAL_INST;
+			xcall_i:		exception_code = MCALL;
+			xbreak_i: 		exception_code = BREAKPOINT;
+			load_access_fault_i: 	exception_code = LOAD_ACCESS_FAULT;
+			load_addr_misaligned_i:	exception_code = LOAD_ADDR_MISALIGNED;
+			store_access_fault_i: 	exception_code = STORE_ACCESS_FAULT;
+			store_addr_misaligned_i:exception_code = STORE_ADDR_MISALIGNED;
 		endcase
+	end */
+
+       	always @(*) begin
+		if(inst_addr_misaligned_i) begin
+			exception_code = INST_ADDR_MISALIGNED;
+		end else if(inst_access_fault_i) begin
+			exception_code = INST_ACCESS_FAULT;
+		end else if(illegal_inst_i) begin
+			exception_code = ILLEGAL_INST;
+		end else if(xcall_i) begin
+			exception_code = MCALL;
+		end else if(xbreak_i) begin
+			exception_code = BREAKPOINT;
+		end else if(load_access_fault_i) begin
+			exception_code = LOAD_ACCESS_FAULT;
+		end else if(load_addr_misaligned_i) begin
+			exception_code = LOAD_ADDR_MISALIGNED;
+		end else if(store_access_fault_i) begin
+			exception_code = STORE_ACCESS_FAULT;
+		end else if(store_addr_misaligned_i) begin
+			exception_code = STORE_ADDR_MISALIGNED;
+		end else begin
+			exception_code = 4'b0;
+		end 
 	end 
 
-	assign exception_sel_flag_o = (exception_code != 0) | (inst_xret) | interrupt; 
+	assign exception_stall_req_o = xcall_i | inst_xret_i; 
+
+	always @(posedge clk_i) begin
+		if (rst_i) begin
+			exception_stall <= 1'b0;
+		end else begin
+			if(exception_stall & ~inst_xret_i) begin
+				exception_stall <= 1'b0;
+			end else if( inst_xret_i) begin
+				exception_stall <= 1'b1;
+			end
+		end 
+	end 
+
+	
 
 	always @(*) begin
 		if(exception_code != 0 | interrupt) begin
 			trap_valid	 = 1'b1; 
 			exception_pc_o 	 = mtvec; 
-		end else if(inst_xret) begin
-			expception_pc_o = epc;
+		end else if(inst_xret_i) begin
+			exception_pc_o = mepc;
 			trap_valid	= 1'b0;
-		end 
+		end else begin
+		       trap_valid = 1'b0;
+	       end	       
 	end
 
 	always @(*) begin
 		if(interrupt) begin
 			case(1'b1) 
-				pend_int[11]: interrupt_code = I_SOFTWARE;
-				pend_int[7] : interrupt_code = I_TIMER;
-				pend_int[3] : interrupt_code = I_EXTERNAL;
+				pend_int[11]: exception_code = I_SOFTWARE;
+				pend_int[7] : exception_code = I_TIMER;
+				pend_int[3] : exception_code = I_EXTERNAL;
 			endcase
 		end
 	end	
 
 	//WRITE REGISTERS
 	always @(posedge clk_i) begin 
-		mstatus = {19'b0, 2'b11, 3'b0, mstatus_mpie, 3'b0, mstatus_mie, 3'b0}; 
-		mip	= {20'b0, xint_meip_i, 3'b0, xint_mtip_i, 3'b0, xint_msip_i, 3'b0};
-		mie	= {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
-	        mcause  = {mcause_int, 27'b0, mcause_exc}; 	
+		mstatus <= {19'b0, 2'b11, 3'b0, mstatus_mpie, 3'b0, mstatus_mie, 3'b0}; 
+		mip	<= {20'b0, xint_meip_i, 3'b0, xint_mtip_i, 3'b0, xint_msip_i, 3'b0};
+		mie	<= {20'b0, mie_meie, 3'b0, mie_mtie, 3'b0, mie_msie, 3'b0};
+	        mcause  <= {mcause_int, 27'b0, mcause_exc}; 	
 	end 
 
-	always @(*) wen	= ~(csr_op_i == 0); 
+	always @(*) wen	= (csr_rs1_i != 0); 
 	//INTERRUPTS 
 	//
 	always @(*) begin
-		pend_int  <= mstatus_mie? mip & mie: 32'b0;
-		interrupt <= |{pend_int[11], pend_int[7], pend_int[3]};
+		pend_int  = mstatus_mie? mip & mie: 32'b0;
+		interrupt = |{pend_int[11], pend_int[7], pend_int[3]};
 	end 	
 
 	//DETERMINE REGISTER TO BE USE
@@ -207,12 +251,12 @@ module titan_csr_exception_unit #(
 				minstret <= 0; 
 			end else begin
 				case(1'b1)
-					wen && is_minstret: 		 minstret[31: 0] <= csr_wdata;
-					wen && is_minstreth:		 minstret[63:32] <= csr_wdata;
-					instruction_ret_i:		 minstret	 <= minstret + 1;
-					inst_fence:			 minstret	 <= minstret + 1;
-					inst_xret:			 minstret	 <= minstret + 1;
-					trap_valid_i && (xcall || xbreak): minstret 	 <= minstret + 1;
+					wen && is_minstret: 		 	minstret[31: 0] <= csr_wdata;
+					wen && is_minstreth:		 	minstret[63:32] <= csr_wdata;
+//					instruction_ret:		 	minstret	 <= minstret + 1;
+					inst_fence_i:			 	minstret	 <= minstret + 1;
+					inst_xret_i:			 	minstret	 <= minstret + 1;
+					trap_valid && (xcall_i || xbreak_i): 	minstret 	 <= minstret + 1;
 				endcase
 			end 
 		end else begin
@@ -225,10 +269,10 @@ module titan_csr_exception_unit #(
 		if(rst_i) begin
 			mstatus_mpie <= 0;
 			mstatus_mie  <= 0;
-		end else if(trap_valid_i) begin
+		end else if(trap_valid) begin
 			mstatus_mpie <= mstatus_mie;
 			mstatus_mie   <= 0;
-		end else if(inst_xret) begin
+		end else if(inst_xret_i) begin
 			mstatus_mpie <= 1;
 			mstatus_mie  <= mstatus_mpie;
 		end else if (wen && is_mstatus) begin
@@ -239,7 +283,7 @@ module titan_csr_exception_unit #(
 
 	always @(posedge clk_i) begin
 		if(rst_i) mepc <= 0; 
-		else if (trap_valid_i) mepc <= {exception_pc_i[31:2], 2'b0};
+		else if (trap_valid) mepc <= {exception_pc_i[31:2], 2'b0};
 		else if (wen && is_mepc) mepc <= {csr_wdata[31:2], 2'b0};
 	end 
 
@@ -247,9 +291,9 @@ module titan_csr_exception_unit #(
 		if(rst_i) begin
 			mcause_int <= 0;
 			mcause_exc <= ILLEGAL_INST;
-		end else if (trap_valid_i) begin
-			mcause_int <= interrupt_code_i;
-			mcause_exc <= exception_code_i;
+		end else if (trap_valid) begin
+			mcause_int <= interrupt;
+			mcause_exc <= exception_code;
 		end else if( wen && is_mcause) begin
 			mcause_int <= csr_wdata[31];
 			mcause_exc <= csr_wdata[3:0];
@@ -257,7 +301,7 @@ module titan_csr_exception_unit #(
 	end 
 
 	always @(posedge clk_i) begin
-		if(trap_valid_i) begin
+		if(trap_valid) begin
 			mtval <= exception_inst_i;
 		end else if( wen && is_mtval) begin
 			mtval <= csr_wdata;

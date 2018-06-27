@@ -64,7 +64,7 @@ module titan_dc_unit (
 		assign mem_ex_sel  	= mem_ex_s;
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
-		assign csr_op	    	= (rs1 == 0 & |{rc,rs})? 3'b0: {rc, rs, rw}; 
+		assign csr_op	    	= {rc, rs, rw}; 
 		assign csr_addr		= inst[31:20]; 
 		
 		//TYPES OF INSTRUCTIONS
@@ -82,9 +82,10 @@ module titan_dc_unit (
 
 		reg is_b, is_imm, is_st, is_ld;//flags for immediate generation
 		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt, is_sltu; //arithmetic operations flags
-		reg is_wr, is_alu, is_immop, is_ldu, is_j, is_csri; //external flags
+		reg is_wr, is_alu, is_immop, is_ldu, is_j, is_csri, is_csr,is_fence; //external flags
 		reg is_word,is_byte,is_hw; 
-		
+		reg illegal, uimp;
+
 		//DECODE INSTRUCTION
 		always @(*) begin
 			//
@@ -143,6 +144,7 @@ module titan_dc_unit (
 			call	= opcode == `sp_op  && inst[31:7] == `syscall;
 			_break	= opcode == `sp_op  && inst[31:7] == `break; 
 			xret	= opcode == `ret    && inst[31:30] == 2'b0 && inst[27:7] == 21'b0_0000_0100_0000_0000_0000;
+			uimp    = inst[31:0] == 32'b0;
 			//---mem flags------
 			is_word     = |{lw,sw};
 			is_hw	    = |{lh,lhu,sh};
@@ -167,9 +169,11 @@ module titan_dc_unit (
 			is_slt      = |{slt,slti};
 			is_sltu     = |{sltu, sltiu};
 			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr}; 
-			is_immop    = |{addi,slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri }; //operation uses immediates? 
-			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui}; //determines if operations is going to write 
-			
+			is_csr	    = |{rw,rs,rc,is_csri};
+			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri };
+			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr}; //determines if operations is going to write 
+			is_fence    = |{fence,fencei};
+			illegal	    = ~|{is_j,is_b,is_add,is_sub,is_xor,is_and,is_or,is_sll,is_sr,is_slt,is_sltu,is_csr,is_fence,_break,call,xret,uimp};
 
 		end
 	

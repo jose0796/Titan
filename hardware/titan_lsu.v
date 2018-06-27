@@ -16,6 +16,7 @@ module titan_lsu (
 			output reg        istb_o,
 			output	 	  istall_o,
 		        //DATA PORT INTERFACE
+
 			input [31:0]      maddr_i,
 			input [31:0]	  mdat_i,
 			input 		  mread_i,
@@ -24,6 +25,7 @@ module titan_lsu (
 			input 		  mhw_i,
 			input 		  mword_i,
 			input 		  munsigned_i,
+			output 		  dstall_o,
 			output reg [31:0] data_o,
 			//DATA MEMORY PORT
 			input [31:0]  	  ddat_i,
@@ -99,6 +101,8 @@ module titan_lsu (
 			end
 		end
 	
+
+		assign dstall_o = (^{mread_i,mwrite_i} & ~dack_i);
 
 		//MEMORY ACCESSING PROCESS
 		always @(posedge clk_i) begin
