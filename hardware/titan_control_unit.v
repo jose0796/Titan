@@ -2,11 +2,13 @@
 
 module titan_control_unit (
 			input 		 rst_i,
-			input 		 branch_flush_req_i,
-			input 		 jump_flush_req_i,
 			input 		 if_stall_req_i,
 			input   	 mem_stall_req_i,
-			input 		 fwd_stall_req_i,
+			input 		 csr_stall_req_i,
+			input 		 ld_stall_req_i,
+			input 		 xcall_break_stall_req_i,
+			input 		 branch_flush_req_i,
+			input 		 jump_flush_req_i,
 			input 		 exception_stall_req_i,
 			output 		 if_kill_o,
 			output reg [1:0] if_pc_sel_o,
@@ -21,13 +23,14 @@ module titan_control_unit (
 			output 		 ex_nop_o  ); 
 
 		
+
 		assign 	mem_stall_o = 0;
 		assign 	ex_stall_o  = mem_stall_req_i; 
-		assign  id_stall_o  = ex_stall_o; 
-		assign  if_stall_o  = if_stall_req_i | id_stall_o | fwd_stall_req_i; 
+		assign  id_stall_o  = ex_stall_o | ex_nop_o | xcall_break_stall_req_i; 
+		assign  if_stall_o  = if_stall_req_i | id_stall_o | ld_stall_req_i ; 
 		
        		//NOPS 
-		assign ex_nop_o = fwd_stall_req_i; 
+		assign ex_nop_o =  ld_stall_req_i | csr_stall_req_i ; 
 		
 		//FLUSHES
 		assign if_kill_o   = jump_flush_req_i | branch_flush_req_i;
@@ -45,6 +48,5 @@ module titan_control_unit (
 			endcase
 		end 
 		
-
 endmodule 	
 

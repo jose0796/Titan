@@ -71,6 +71,8 @@
 		//+OUT
 		wire 	[ 4:0]	id_rs1;
 		wire 	[ 4:0]	id_rs2;
+		wire 		id_syscall_op;
+		wire 		id_break_op;
 		wire 	[ 4:0]	ex_rs1;	
 		wire 	[31:0]	pc_jump_addr; 
 		wire 	[31:0]	pc_branch_addr;
@@ -160,6 +162,7 @@
 		wire 		wb_store_addr_misaligned;
 		wire 		wb_load_access_fault;
 		wire 		wb_store_access_fault;
+		wire 		csr_dependence; 
 		wire 		ld_dependence;
 
 		//control signals
@@ -170,6 +173,12 @@
 		wire 		fwd_stall_req;
 		wire 		ex_nop;
 		wire 		if_kill;
+
+		wire 	hazard; 
+		wire	en_fwd;
+		wire 	csr_stall_req;
+		wire 	ld_stall_req;
+		wire 	xcall_break_stall_req;
 
 		//CSR signals 
 		//
@@ -219,7 +228,7 @@
 				.rst_i(rst_i),
 				// ID <= CONTROL
 				.id_stall_i(id_stall),
-				.id_flush_i(id_flush),
+				.id_flush_i(id_flush | ex_nop),
 				//--------------------------------------
 				// ID <= IF
 				.id_pc_i(id_pc),
@@ -248,6 +257,8 @@
 				.pc_jump_address_o(pc_jump_addr),    
 				.take_branch_o(take_branch),	     
 				.take_jump_o(take_jump),
+				.id_syscall_op_o(id_syscall_op),
+				.id_break_op_o(id_break_op),
 				//---------------------------------------
 				//---------------------------------------
 				// OUTPUTS
@@ -283,7 +294,7 @@
 				.rst_i(rst_i),
 				// CONTROL => ID 
 				.ex_stall_i(ex_stall),
-				.ex_flush_i(ex_flush | ex_nop),
+				.ex_flush_i(ex_flush),
 				// ID => EX
 				.ex_pc_i(ex_pc),
 				.ex_instruction_i(ex_instruction),
@@ -419,16 +430,16 @@
 				.mem_we_i(mem_we),
 				.wb_we_i(wb_we),
 				// EX => FWDU 
-				.ls_op_i(ex_mem_ex_sel), //this is to know if it's a memory instruction
 				.ex_rd_i(ex_waddr),
 				// MEM => FWU
 				.mem_rd_i(mem_waddr),
 				// WB  => FWU
 				.wb_rd_i(wb_waddr),
 				//forward selectors FWDU => ID 
+				.enable_fwd_i(en_fwd),
 				.fwd_sel_a_o(forward_a_sel),
 				.fwd_sel_b_o(forward_b_sel),
-				.ld_dependence_o(ld_dependence) //for hazard control, you
+				.hazard_o(hazard)
 				); 
 
 
@@ -467,17 +478,32 @@
 				.dcyc_o(dwbm_cyc_o),
 				.dstb_o(dwbm_stb_o),
 				.dwe_o(dwbm_we_o) 		);
-		
+	
 
+		titan_hazard_unit HZ (
+				.id_xcall_break_i(id_syscall_op|id_break_op),
+				.ex_xcall_break_i(ex_syscall_op|ex_break_op),
+				.mem_xcall_break_i(mem_syscall_op|mem_break_op),
+				.ex_csr_op_i(|ex_csr_op),
+				.mem_csr_op_i(|mem_csr_op),
+				.ex_ld_op_i(ex_mem_ex_sel),
+				.mem_ld_op_i(mem_mem_ex_sel),
+				.hazard_i(hazard),
+				.enable_fwd_o(en_fwd),
+				.csr_stall_req_o(csr_stall_req),
+				.ld_stall_req_o(ld_stall_req),
+				.xcall_break_stall_req_o(xcall_break_stall_req)); 
 
 		titan_control_unit CU (
 				.rst_i(rst_i),
-				.branch_flush_req_i(branch_flush_req),
-				.jump_flush_req_i(jump_flush_req),
 				.if_pc_sel_o(if_pc_sel),
 				.if_stall_req_i(if_stall_req),
 				.mem_stall_req_i(mem_stall_req),
-				.fwd_stall_req_i(fwd_stall_req),
+				.csr_stall_req_i(csr_dependence),
+				.ld_stall_req_i(ld_stall_req),
+				.xcall_break_stall_req_i(xcall_break_stall_req),
+				.branch_flush_req_i(branch_flush_req),
+				.jump_flush_req_i(jump_flush_req),
 				.exception_stall_req_i(exception_stall_req),
 				.if_stall_o(if_stall),
 				.id_stall_o(id_stall),

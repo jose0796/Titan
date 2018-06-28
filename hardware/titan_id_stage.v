@@ -29,6 +29,8 @@ module titan_id_stage(
 		 output [31:0] 	pc_jump_address_o,
 		 output 	take_branch_o,
 		 output 	take_jump_o,
+		 output 	id_syscall_op_o,
+		 output 	id_break_op_o,
 		 output [31:0]	ex_pc_o,
 		 output [31:0]	ex_instruction_o,
 		 output [31:0] 	ex_port_a_o,
@@ -89,6 +91,9 @@ module titan_id_stage(
 	wire 	[31:0]	id_store_data;
 	wire 		shift_op;
 	wire 	[31:0]	pc_mux;
+	wire 		load_store_op;
+
+
 
 	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
@@ -102,7 +107,8 @@ module titan_id_stage(
 	assign csr_data			= (csr_imm_op)? {27'b0, rs1} : port_a;  
 
 	assign pc_mux			= (jump_op)? (id_pc_i + 4): id_pc_i;
-
+	assign id_syscall_op_o		= syscall_op;
+	assign id_break_op_o		= break_op;
 
 	titan_mux21 SRA_MUX (
 			.in_0(_port_b),

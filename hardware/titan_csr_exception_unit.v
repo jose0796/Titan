@@ -142,7 +142,7 @@ module titan_csr_exception_unit #(
 		end 
 	end 
 
-	assign exception_stall_req_o = xcall_i | inst_xret_i; 
+	assign exception_stall_req_o = (exception_code != 0) | inst_xret_i; 
 
 	always @(posedge clk_i) begin
 		if (rst_i) begin
