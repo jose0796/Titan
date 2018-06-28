@@ -10,10 +10,10 @@ module titan_exu (
 	wire signed   [31:0] sb;
 	wire 	      [31:0] b;
 
-	assign sa = port_a;
-	assign a = port_a;
-	assign sb = port_b;
-        assign b = port_b;	
+	assign 	sa = port_a;
+	assign 	a  = port_a;
+	assign 	sb = port_b;
+        assign 	b  = port_b;	
 
 
 	always @(*) begin 

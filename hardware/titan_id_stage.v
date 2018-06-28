@@ -68,13 +68,14 @@ module titan_id_stage(
 	wire		porta_sel;
 	wire [31:0] 	port_a;
 	wire [31:0] 	port_b; 
+	wire [31:0]	_port_b;
 	wire 		jalr_op;
 	wire [5:0] 	mem_flags;
 	wire 		mem_ex_sel;
 	wire 		jump_op;
+	// verilator lint_off UNUSED
 	wire [31:0]	pc_jump;
 	wire 		branch_op;
-	wire 		load_store_op;
 	wire 		take_branch;
 	wire 		break_op;
 	wire 		syscall_op;
@@ -86,22 +87,32 @@ module titan_id_stage(
 	wire 		xret_op;
 	wire 		illegal_inst; 
 	wire 	[31:0]	id_store_data;
-
+	wire 		shift_op;
+	wire 	[31:0]	pc_mux;
 
 	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
 	assign take_jump_o		= jump_op;
 	assign id_rs1_o 		= rs1;
 	assign id_rs2_o			= rs2;
-	assign _imm 		   	= ((jalr_op)? ($signed(imm << 1) + $signed(drs1)) : (imm<<1));
-	assign pc_jump			=  id_pc_i  + _imm;
+	assign _imm 		   	= ((jalr_op)? (($signed(imm) + $signed(muxa_i))) : (imm<<1));
+	assign pc_jump			= (jalr_op)? _imm : id_pc_i  + _imm;
 	assign pc_jump_address_o 	= {pc_jump[31:1], 1'b0}; 
 	assign pc_branch_address_o   	= _imm + id_pc_i; 
 	assign csr_data			= (csr_imm_op)? {27'b0, rs1} : port_a;  
 
+	assign pc_mux			= (jump_op)? (id_pc_i + 4): id_pc_i;
+
+
+	titan_mux21 SRA_MUX (
+			.in_0(_port_b),
+			.in_1({27'b0,_port_b[4:0]}),
+			.sel(shift_op),
+			.out(port_b));
+
 	titan_mux21 PORT_A_MUX (
 			.in_0(muxa_i),
-			.in_1(id_pc_i),
+			.in_1(pc_mux),
 			.sel(porta_sel),
 			.out(port_a) );
 		
@@ -109,7 +120,7 @@ module titan_id_stage(
 			.in_0(muxb_i),
 			.in_1(imm),
 			.sel(portb_sel),
-			.out(port_b) );
+			.out(_port_b));
 
 
 	titan_mux41 FORWARD_A_MUX (
@@ -162,6 +173,7 @@ module titan_id_stage(
 			.jalr_op(jalr_op),
 			.load_store_op(load_store_op),
 			.illegal_inst(illegal_inst),
+			.shift_op(shift_op),
 			.fence_op(fence_op),
 			.xret_op(xret_op),
 			.syscall_op(syscall_op),

@@ -28,8 +28,6 @@ module titan_mem_stage(
 		  input			mem_syscall_op_i,
 		  //LSU  SIGNALS
 		  input 	[31:0] 	mem_data_i,
-		  input 		mem_cyc_i,
-		  input 		mem_ack_i,
 		  input 		mem_err_i,
 		  output 		mem_mread_o,
 		  output		mem_mwrite_o,
@@ -64,17 +62,16 @@ module titan_mem_stage(
 		  output reg 		wb_syscall_op_o
 		  ); 
 			
-		wire mem_load_addr_misaligned_i;
-		wire mem_store_addr_misaligned_i;
-		wire mem_load_access_fault_i;
-		wire mem_store_access_fault_i;
+	wire mem_load_addr_misaligned_i;
+	wire mem_store_addr_misaligned_i;
+	wire mem_load_access_fault_i;
+	wire mem_store_access_fault_i;
 
 	assign mem_load_addr_misaligned_i  = (mem_mread_o && mem_mword_o)? !(mem_result_i[1:0] == 0): ((mem_mread_o && mem_mhw_o)? !(mem_result_i[0] == 0): 1'b0);
 	assign mem_store_addr_misaligned_i  = (mem_mwrite_o && mem_mword_o)? !(mem_result_i[1:0] == 0): ((mem_mwrite_o && mem_mhw_o)? !(mem_result_i[0] == 0): 1'b0);
 	assign mem_load_access_fault_i	   = (mem_mem_flags_i[1])? (mem_err_i): 1'b0;
 	assign mem_store_access_fault_i	   = (mem_mem_flags_i[0])? (mem_err_i): 1'b0;
 
-	assign mem_request_stall_o 	   = mem_cyc_i & (~mem_ack_i); 
 	assign mem_mwrite_o 		   = mem_mem_flags_i[5]; 
 	assign mem_mread_o 		   = mem_mem_flags_i[4]; 
 	assign mem_mword_o 		   = mem_mem_flags_i[3]; 

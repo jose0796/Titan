@@ -344,8 +344,6 @@
 				.forward_mem_dat_o(mem_fwd_drd),
 				//-----------------------------------------
 				//LSU => MEM
-				.mem_cyc_i(dwbm_cyc_o),
-				.mem_ack_i(dwbm_ack_i),
 				.mem_err_i(dwbm_err_i),
 				.mem_mread_o(mread),
 				.mem_mwrite_o(mwrite),

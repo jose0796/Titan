@@ -21,6 +21,7 @@ module titan_dc_unit (
 		output 			xret_op,
 		output 			load_store_op,
 		output 			fence_op,
+		output 			shift_op,
 		output 			syscall_op,
 		output 			branch_op,
 		output 			jump_op,
@@ -52,12 +53,13 @@ module titan_dc_unit (
 		assign branch_op    	= is_b; 	
 		//+- EX STAGE ASSIGNMENTS
 		assign rs1 	    	= (lui)? 5'b0 : inst[19:15]; 
-		assign rs2 	    	= inst[24:20];
+		assign rs2 	    	= (is_j)? 5'b0 :inst[24:20];
 		assign rd  	    	= (is_st)? 5'b0: inst[11:7]; 
 		assign illegal_inst	= illegal;
 		assign fence_op		= fence & fencei;
 		assign xret_op		= xret;
 		assign load_store_op	= is_ld;
+		assign shift_op		= is_shift;
 		assign reg_write    	= (rd == 5'b0)? 1'b0 : is_wr;
 	        assign break_op     	= _break;
 		assign syscall_op   	= call; 
@@ -83,7 +85,7 @@ module titan_dc_unit (
 		reg call, _break;
 
 		reg is_b, is_imm, is_st, is_ld;//flags for immediate generation
-		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr, is_slt, is_sltu; //arithmetic operations flags
+		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr,is_shift, is_slt, is_sltu; //arithmetic operations flags
 		reg is_wr, is_alu, is_immop, is_ldu, is_j, is_csri, is_csr,is_fence; //external flags
 		reg is_word,is_byte,is_hw; 
 		reg illegal, uimp;
@@ -159,21 +161,22 @@ module titan_dc_unit (
 			is_st	    = |{sb, sh, sw}; //store operation flags
 			is_b	    = |{beq,bne,blt,bge,bltu,bgeu};
 			is_ld	    = |{lb,lbu,lh,lhu,lw}; //loads operation flag 
-			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli,srai, xori, is_ld, jalr}; //immediates operations excluding store
+			is_imm	    = |{addi,slti,sltiu,ori,andi,slli,srli, xori, is_ld, jalr}; //immediates operations excluding store
 			//--Arithmetic operations 
-			is_add	    = |{add, addi, is_st, is_ld, lui, auipc}; //add operation flag
+			is_add	    = |{add, addi, is_st, is_ld, lui, auipc,is_j }; //add operation flag
 			is_sub	    = |{sub}; //sub operation flag
 			is_xor	    = |{_xor,xori};//xor operation flag
 			is_and	    = |{_and,andi}; //and operation flag
 			is_or	    = |{_or,ori}; //or operation flag
 			is_sll      = |{sll, slli}; //shift left operations flag
 			is_sr	    = |{sra, srl, srai, srli}; //shift rights operations flag
+			is_shift    = |{sra,srl,sll};
 			is_slt      = |{slt,slti};
 			is_sltu     = |{sltu, sltiu};
 			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr, is_slt, is_sltu}; 
 			is_csr	    = |{rw,rs,rc,is_csri};
 			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri };
-			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr}; //determines if operations is going to write 
+			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr, is_j}; //determines if operations is going to write 
 			is_fence    = |{fence,fencei};
 			illegal	    = ~|{is_j,is_b,is_add,is_sub,is_xor,is_and,is_or,is_sll,is_sr,is_slt,is_sltu,is_csr,is_fence,_break,call,xret,uimp};
 
@@ -185,10 +188,12 @@ module titan_dc_unit (
 			case(1'b1)	
 			lui || auipc	: imm = { inst[31:12] , 12'h0}; 
 			jal		: imm = { ((inst[31])? 12'hfff   : 12'b0), inst[31], inst[19:12], inst[20], inst[30:21]}; 
+			srai		: imm = { 27'b0, inst[24:20] };
 			is_b 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31], inst[7], inst[30:25], inst[11:8]}; 	
 			is_imm 		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:20]}; 
 			is_st		: imm = { ((inst[31])? 20'hfffff : 20'b0), inst[31:25], inst[11:7]};
 			is_csri		: imm = { 27'b0, inst[19:15]};
+
 			endcase
 		end 
 		
@@ -233,7 +238,7 @@ module titan_dc_unit (
 		//ALU_PORT SELECTION
 		always @(*) begin 
 			portb_sel = (is_immop) ? 1'b1 : 1'b0;
-			porta_sel = (auipc) ? 1'b1 : 1'b0;
+			porta_sel = (auipc|is_j) ? 1'b1 : 1'b0;
 		end
 endmodule			
 

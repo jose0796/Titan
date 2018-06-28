@@ -68,6 +68,11 @@ distclean: clean
 
 run_test_ui: 
 	@./build/Titan.exe --file tests/riscv-tests/rv32ui-p-$(obj).elf --timeout 100000 --trace
+
+run_test_mi: 
+	@./build/Titan.exe --file tests/riscv-tests/rv32mi-p-$(obj).elf --timeout 100000 --trace
+
+
 vcd:
 	@gtkwave build/vcd/*.vcd >/dev/null &
 
