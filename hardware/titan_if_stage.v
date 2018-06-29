@@ -11,8 +11,9 @@ module titan_if_stage #(
 		input  		clk_i,
 		input  		rst_i,
 		input  		if_stall,
-		input 		id_stall,
 		input 		if_flush,
+		input 		id_stall,
+		input 		id_flush,
 		input  [31:0]	if_instruction_i,
 		input  [31:0]	pc_branch_address_i,
 		input  [31:0] 	pc_jump_address_i,
@@ -35,6 +36,7 @@ module titan_if_stage #(
 			PC_REG(.clk_i(clk_i),
 				.rst_i(rst_i),
 				.stall(if_stall),
+				.flush(if_flush),
 				.pc_i(if_pc_mux),
 				.pc_o(if_pc_o) );
 	titan_pc_add PC_ADD   (
@@ -53,9 +55,8 @@ module titan_if_stage #(
 	titan_ifid_reg IF_ID (
 				.clk(clk_i),
 				.rst(rst_i),
-				.if_stall(if_stall),
 				.id_stall(id_stall),
-				.flush(if_flush),
+				.id_flush(id_flush),
 				.if_pc(if_pc_o),
 				.if_inst_addr_misaligned(if_inst_addr_misaligned),
 				.if_inst_access_fault(if_inst_access_fault_i),

@@ -142,6 +142,8 @@
 		//+OUT
 		
 		/* verilator lint_off UNUSED */ 
+		wire 		wb_stall;
+		wire 		wb_flush;
 		wire 	[31:0]	wb_result_mem;
 		wire 	[31:0]	wb_pc;
 		wire 	[31:0]	wb_instruction;
@@ -173,6 +175,7 @@
 		wire 		fwd_stall_req;
 		wire 		ex_nop;
 		wire 		if_kill;
+		wire 		illegal_stall_req;
 
 		wire 	hazard; 
 		wire	en_fwd;
@@ -199,8 +202,9 @@
 				.rst_i(rst_i),
 				// CONTROL => IF
 				.if_stall(if_stall & ~if_kill),
-				.id_stall(id_stall),
 				.if_flush(if_flush),
+				.id_stall(id_stall),
+				.id_flush(id_flush),
 				.if_pc_sel_i(if_pc_sel),
 				//----------------------------------
 				// LSU => IF
@@ -227,8 +231,8 @@
 				.clk_i(clk_i),
 				.rst_i(rst_i),
 				// ID <= CONTROL
-				.id_stall_i(id_stall),
-				.id_flush_i(id_flush | ex_nop),
+				.ex_stall_i(ex_stall),
+				.ex_flush_i(ex_flush | ex_nop),
 				//--------------------------------------
 				// ID <= IF
 				.id_pc_i(id_pc),
@@ -293,8 +297,8 @@
 				.clk_i(clk_i),
 				.rst_i(rst_i),
 				// CONTROL => ID 
-				.ex_stall_i(ex_stall),
-				.ex_flush_i(ex_flush),
+				.mem_stall_i(mem_stall),
+				.mem_flush_i(mem_flush),
 				// ID => EX
 				.ex_pc_i(ex_pc),
 				.ex_instruction_i(ex_instruction),
@@ -348,8 +352,8 @@
 				.clk_i(clk_i),
 				.rst_i(rst_i),
 				//CONTROL => MEM
-				.stall(mem_stall),
-				.flush(mem_flush),
+				.wb_stall(wb_stall),
+				.wb_flush(wb_flush),
 				//-----------------------------------------
 				//MEM => FORWARDING UNIT
 				.forward_mem_dat_o(mem_fwd_drd),
@@ -481,6 +485,9 @@
 	
 
 		titan_hazard_unit HZ (
+				.id_illegal_i(id_illegal_inst),
+				.ex_illegal_i(ex_illegal_inst),
+				.mem_illegal_i(mem_illegal_inst),
 				.id_xcall_break_i(id_syscall_op|id_break_op),
 				.ex_xcall_break_i(ex_syscall_op|ex_break_op),
 				.mem_xcall_break_i(mem_syscall_op|mem_break_op),
@@ -490,6 +497,7 @@
 				.mem_ld_op_i(mem_mem_ex_sel),
 				.hazard_i(hazard),
 				.enable_fwd_o(en_fwd),
+				.illegal_stall_req_o(illegal_stall_req),
 				.csr_stall_req_o(csr_stall_req),
 				.ld_stall_req_o(ld_stall_req),
 				.xcall_break_stall_req_o(xcall_break_stall_req)); 
@@ -499,8 +507,9 @@
 				.if_pc_sel_o(if_pc_sel),
 				.if_stall_req_i(if_stall_req),
 				.mem_stall_req_i(mem_stall_req),
-				.csr_stall_req_i(csr_dependence),
+				.csr_stall_req_i(csr_stall_req),
 				.ld_stall_req_i(ld_stall_req),
+				.illegal_stall_req_i(illegal_stall_req),
 				.xcall_break_stall_req_i(xcall_break_stall_req),
 				.branch_flush_req_i(branch_flush_req),
 				.jump_flush_req_i(jump_flush_req),
@@ -509,11 +518,13 @@
 				.id_stall_o(id_stall),
 				.ex_stall_o(ex_stall),
 				.mem_stall_o(mem_stall),
+				.wb_stall_o(wb_stall),
 				.if_kill_o(if_kill),
 				.if_flush_o(if_flush),
 				.id_flush_o(id_flush),
 				.ex_flush_o(ex_flush),
 				.mem_flush_o(mem_flush),
+				.wb_flush_o(wb_flush),
 				.ex_nop_o(ex_nop) 		); 
 
 		titan_csr_exception_unit # (	

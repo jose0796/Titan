@@ -3,8 +3,8 @@
 module titan_mem_stage( 
 		  input 		clk_i, 
 		  input 		rst_i,
-		  input 		stall,
-		  input 		flush,
+		  input 		wb_stall,
+		  input 		wb_flush,
 		  //MEM => ID FORWARDING 
 		  output 	[31:0] forward_mem_dat_o,
 	          //EX => MEM SIGNALS 
@@ -94,26 +94,26 @@ module titan_mem_stage(
 
 
 	always @(posedge clk_i) begin
-	wb_pc_o 		  <= (rst_i | flush) ? 32'h0  : ((stall)? wb_pc_o 			: mem_pc_i); 
-	wb_instruction_o 	  <= (rst_i | flush) ? 32'h33 : ((stall)? wb_instruction_o 		: mem_instruction_i); 
-	wb_result_o 		  <= (rst_i | flush) ? 32'h0  : ((stall)? wb_result_o 			: mem_result); 
-	wb_rs1_o 		  <= (rst_i | flush) ? 5'h0   : ((stall)? wb_rs1_o 			: mem_rs1_i); 
-	wb_waddr_o 		  <= (rst_i | flush) ? 5'h0   : ((stall)? wb_waddr_o 			: mem_waddr_i); 
-	wb_we_o 		  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_we_o 			: mem_we_i); 
-	wb_csr_data_o 		  <= (rst_i | flush) ? 32'h0  : ((stall)? wb_csr_data_o 		: mem_csr_data_i); 
-	wb_csr_addr_o 		  <= (rst_i | flush) ? 12'h0  : ((stall)? wb_csr_addr_o 		: mem_csr_addr_i); 
-	wb_csr_op_o 		  <= (rst_i | flush) ? 3'h0   : ((stall)? wb_csr_op_o 			: mem_csr_op_i); 
-	wb_inst_addr_misaligned_o <= (rst_i | flush) ? 1'h0   : ((stall)? wb_inst_addr_misaligned_o	: mem_inst_addr_misaligned_i); 
-	wb_load_addr_misaligned_o <= (rst_i | flush) ? 1'h0   : ((stall)? wb_load_addr_misaligned_o	: mem_load_addr_misaligned_i); 
-	wb_store_addr_misaligned_o<= (rst_i | flush) ? 1'h0   : ((stall)? wb_store_addr_misaligned_o	: mem_store_addr_misaligned_i); 
-	wb_inst_access_fault_o 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_inst_access_fault_o 	: mem_inst_access_fault_i); 
-	wb_load_access_fault_o 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_load_access_fault_o 	: mem_load_access_fault_i); 
-	wb_store_access_fault_o	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_store_access_fault_o 	: mem_store_access_fault_i); 
-	wb_illegal_inst_o	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_illegal_inst_o 		: mem_illegal_inst_i); 
-	wb_fence_op_o	 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_fence_op_o 		: mem_fence_op_i); 
-	wb_xret_op_o	 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_xret_op_o 			: mem_xret_op_i); 
-	wb_break_op_o	 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_break_op_o 		: mem_break_op_i); 
-	wb_syscall_op_o	 	  <= (rst_i | flush) ? 1'h0   : ((stall)? wb_syscall_op_o 		: mem_syscall_op_i); 
+	wb_pc_o 		  <= (rst_i | wb_flush) ? 32'h0  : ((wb_stall)? wb_pc_o 			: mem_pc_i); 
+	wb_instruction_o 	  <= (rst_i | wb_flush) ? 32'h33 : ((wb_stall)? wb_instruction_o 		: mem_instruction_i); 
+	wb_result_o 		  <= (rst_i | wb_flush) ? 32'h0  : ((wb_stall)? wb_result_o 			: mem_result); 
+	wb_rs1_o 		  <= (rst_i | wb_flush) ? 5'h0   : ((wb_stall)? wb_rs1_o 			: mem_rs1_i); 
+	wb_waddr_o 		  <= (rst_i | wb_flush) ? 5'h0   : ((wb_stall)? wb_waddr_o 			: mem_waddr_i); 
+	wb_we_o 		  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_we_o 			: mem_we_i); 
+	wb_csr_data_o 		  <= (rst_i | wb_flush) ? 32'h0  : ((wb_stall)? wb_csr_data_o 			: mem_csr_data_i); 
+	wb_csr_addr_o 		  <= (rst_i | wb_flush) ? 12'h0  : ((wb_stall)? wb_csr_addr_o 			: mem_csr_addr_i); 
+	wb_csr_op_o 		  <= (rst_i | wb_flush) ? 3'h0   : ((wb_stall)? wb_csr_op_o 			: mem_csr_op_i); 
+	wb_inst_addr_misaligned_o <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_inst_addr_misaligned_o	: mem_inst_addr_misaligned_i); 
+	wb_load_addr_misaligned_o <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_load_addr_misaligned_o	: mem_load_addr_misaligned_i); 
+	wb_store_addr_misaligned_o<= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_store_addr_misaligned_o	: mem_store_addr_misaligned_i); 
+	wb_inst_access_fault_o 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_inst_access_fault_o 		: mem_inst_access_fault_i); 
+	wb_load_access_fault_o 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_load_access_fault_o 		: mem_load_access_fault_i); 
+	wb_store_access_fault_o	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_store_access_fault_o 	: mem_store_access_fault_i); 
+	wb_illegal_inst_o	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_illegal_inst_o 		: mem_illegal_inst_i); 
+	wb_fence_op_o	 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_fence_op_o 			: mem_fence_op_i); 
+	wb_xret_op_o	 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_xret_op_o 			: mem_xret_op_i); 
+	wb_break_op_o	 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_break_op_o 			: mem_break_op_i); 
+	wb_syscall_op_o	 	  <= (rst_i | wb_flush) ? 1'h0   : ((wb_stall)? wb_syscall_op_o 		: mem_syscall_op_i); 
 	end	
 
 endmodule 

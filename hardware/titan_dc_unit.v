@@ -88,7 +88,7 @@ module titan_dc_unit (
 		reg is_add, is_sub, is_and, is_xor, is_or, is_sll, is_sr,is_shift, is_slt, is_sltu; //arithmetic operations flags
 		reg is_wr, is_alu, is_immop, is_ldu, is_j, is_csri, is_csr,is_fence; //external flags
 		reg is_word,is_byte,is_hw; 
-		reg illegal, uimp;
+		reg illegal;
 
 		//DECODE INSTRUCTION
 		always @(*) begin
@@ -148,7 +148,6 @@ module titan_dc_unit (
 			call	= opcode == `sp_op  && inst[31:7] == `syscall;
 			_break	= opcode == `sp_op  && inst[31:7] == `break; 
 			xret	= opcode == `ret    && inst[31:30] == 2'b0 && inst[27:7] == 21'b0_0000_0100_0000_0000_0000;
-			uimp    = inst[31:0] == 32'b0;
 			//---mem flags------
 			is_word     = |{lw,sw};
 			is_hw	    = |{lh,lhu,sh};
@@ -178,7 +177,7 @@ module titan_dc_unit (
 			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri };
 			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr, is_j}; //determines if operations is going to write 
 			is_fence    = |{fence,fencei};
-			illegal	    = ~|{is_j,is_b,is_add,is_sub,is_xor,is_and,is_or,is_sll,is_sr,is_slt,is_sltu,is_csr,is_fence,_break,call,xret,uimp};
+			illegal	    = ~|{is_j,is_b,is_add,is_sub,is_xor,is_and,is_or,is_sll,is_sr,is_slt,is_sltu,is_csr,is_fence,_break,call,xret};
 
 		end
 	

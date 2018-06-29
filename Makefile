@@ -72,6 +72,8 @@ run_test_ui:
 run_test_mi: 
 	@./build/Titan.exe --file tests/riscv-tests/rv32mi-p-$(obj).elf --timeout 100000 --trace
 
+run_benchmark:
+	@./build/Titan.exe --file tests/benchmarks/$(obj).riscv --timeout 10000000 --trace
 
 vcd:
 	@gtkwave build/vcd/*.vcd >/dev/null &

@@ -4,8 +4,8 @@
 module titan_ex_stage (
 		 input wire	clk_i,
 		 input wire	rst_i,
-		 input 		ex_stall_i,
-		 input 		ex_flush_i,
+		 input 		mem_stall_i,
+		 input 		mem_flush_i,
 		 input [31:0]	ex_pc_i,
 		 input [31:0]	ex_instruction_i,	
 		 input [31:0] 	ex_port_a_i,
@@ -63,8 +63,8 @@ module titan_ex_stage (
 	titan_exmem_register  EX_MEM(
 				.clk(clk_i),
 				.rst(rst_i),
-				.stall(ex_stall_i),
-				.flush(ex_flush_i),
+				.stall(mem_stall_i),
+				.flush(mem_flush_i),
 				.ex_pc(ex_pc_i),
 				.ex_instruction(ex_instruction_i),
 				.ex_waddr(ex_waddr_i),
