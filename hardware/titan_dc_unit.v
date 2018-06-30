@@ -68,7 +68,7 @@ module titan_dc_unit (
 		assign mem_ex_sel  	= mem_ex_s;
 		//+- WB STAGE ASSIGMENTS
 		assign csr_imm_op   	= is_csri; 	 
-		assign csr_op	    	= {rc, rs, rw}; 
+		assign csr_op	    	= {rc|rci, rs|rsi, rw|rwi}; 
 		assign csr_addr		= inst[31:20]; 
 		
 		//TYPES OF INSTRUCTIONS

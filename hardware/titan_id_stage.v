@@ -31,6 +31,7 @@ module titan_id_stage(
 		 output 	take_jump_o,
 		 output 	id_syscall_op_o,
 		 output 	id_break_op_o,
+		 output 	id_illegal_inst_o,
 		 output [31:0]	ex_pc_o,
 		 output [31:0]	ex_instruction_o,
 		 output [31:0] 	ex_port_a_o,
@@ -94,7 +95,7 @@ module titan_id_stage(
 	wire 		load_store_op;
 
 
-
+	assign id_illegal_inst_o	= illegal_inst; 
 	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
 	assign take_jump_o		= jump_op;

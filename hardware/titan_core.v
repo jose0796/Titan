@@ -56,6 +56,7 @@
 		//ID STAGE SIGNALS 
 		//+IN 
 		wire 	[31:0]	id_instruction;
+		wire 		id_illegal_inst;
 		wire	[31:0]	id_pc;
 		wire	[ 4:0]	wb_waddr;
 		wire		wb_we;
@@ -255,6 +256,7 @@
 				// ID => FORWARDING UNIT
 				.id_rs1_o(id_rs1),
 				.id_rs2_o(id_rs2),
+				.id_illegal_inst_o(id_illegal_inst),
 				//---------------------------------------
 				// ID => IF & CONTROL (JUMPS)
 				.pc_branch_address_o(pc_branch_addr),
