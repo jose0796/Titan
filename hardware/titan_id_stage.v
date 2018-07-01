@@ -7,52 +7,51 @@
 //`include "./idex_register.v"
 
 module titan_id_stage(
-		 input 		clk_i,
-		 input 		rst_i,
-		 input  	ex_stall_i,
-		 input 		ex_flush_i,
-		 input 	[31:0] 	id_pc_i,
-		 input 	[31:0] 	id_instruction_i,
-		 input 		id_inst_addr_misaligned_i,
-		 input 		id_inst_access_fault_i,
-		 input  [31:0] 	wb_data_i,
-		 input  [ 4:0] 	wb_address_i,
-		 input  	wb_we_i,
-		 input  [31:0] 	ex_fwd_drd_i,
-		 input  [31:0] 	mem_fwd_drd_i,
-		 input 	[31:0]  wb_fwd_drd_i,
-		 input  [ 1:0]  forward_a_sel_i,
-		 input 	[ 1:0]	forward_b_sel_i,
-		 output [ 4:0]	id_rs1_o,
-		 output [ 4:0]	id_rs2_o, 
-		 output [31:0] 	pc_branch_address_o,
-		 output [31:0] 	pc_jump_address_o,
-		 output 	take_branch_o,
-		 output 	take_jump_o,
-		 output 	id_syscall_op_o,
-		 output 	id_break_op_o,
-		 output 	id_illegal_inst_o,
-		 output [31:0]	ex_pc_o,
-		 output [31:0]	ex_instruction_o,
-		 output [31:0] 	ex_port_a_o,
-		 output [31:0] 	ex_port_b_o,
-		 output [ 3:0] 	ex_alu_op_o,
-		 output [ 4:0]  ex_rs1_o,
-		 output [ 4:0] 	ex_waddr_o,
-		 output 	ex_we_o,	
-		 output [31:0]	ex_store_data_o,
-		 output [ 5:0] 	ex_mem_flags_o,
-		 output 	ex_mem_ex_sel_o,
-		 output 	ex_illegal_inst_o,
-		 output 	ex_inst_addr_misaligned_o,
-		 output 	ex_inst_access_fault_o,
-		 output 	ex_fence_op_o,
-		 output 	ex_xret_op_o,
-		 output 	ex_break_op_o,
-		 output 	ex_syscall_op_o,
-		 output	[31:0]	ex_csr_data_o,
-		 output [2:0] 	ex_csr_op_o,
-		 output [11:0]  ex_csr_addr_o
+		 input 			clk_i,
+		 input 			rst_i,
+		 input  		ex_stall_i,
+		 input 			ex_flush_i,
+		 input 		[31:0] 	id_pc_i,
+		 input 		[31:0] 	id_instruction_i,
+		 input  	[31:0]	if_exc_data_i,
+		 input 		[ 3:0] 	if_exception_i,
+		 input 			if_trap_valid_i,
+		 input  	[31:0] 	wb_data_i,
+		 input  	[ 4:0] 	wb_address_i,
+		 input  		wb_we_i,
+		 input  	[31:0] 	ex_fwd_drd_i,
+		 input  	[31:0] 	mem_fwd_drd_i,
+		 input 		[31:0]  wb_fwd_drd_i,
+		 input  	[ 1:0]  forward_a_sel_i,
+		 input 		[ 1:0]	forward_b_sel_i,
+		 output 	[ 4:0]	id_rs1_o,
+		 output 	[ 4:0]	id_rs2_o, 
+		 output 	[31:0] 	pc_branch_address_o,
+		 output 	[31:0] 	pc_jump_address_o,
+		 output 		take_branch_o,
+		 output 		take_jump_o,
+		 output reg 	[ 3:0]	id_exception_o,
+		 output reg		id_trap_valid_o,
+		 output reg 	[31:0]	id_exc_data_o,
+		 output 	[31:0]  ex_pc_o,
+		 output 	[31:0]	ex_instruction_o,
+		 output 	[31:0] 	ex_port_a_o,
+		 output	 	[31:0] 	ex_port_b_o,
+		 output 	[ 3:0] 	ex_alu_op_o,
+		 output 	[ 4:0]  ex_rs1_o,
+		 output 	[ 4:0] 	ex_waddr_o,
+		 output 		ex_we_o,	
+		 output 	[31:0]	ex_store_data_o,
+		 output 	[ 5:0] 	ex_mem_flags_o,
+		 output 		ex_mem_ex_sel_o,
+		 output 		ex_fence_op_o,
+		 output 		ex_xret_op_o,
+		 output 	[ 3:0]	ex_exception_o,
+		 output 		ex_trap_valid_o,
+		 output 	[31:0]	ex_exc_data_o,
+		 output		[31:0]	ex_csr_data_o,
+		 output 	[2:0] 	ex_csr_op_o,
+		 output 	[11:0]  ex_csr_addr_o
 		 );
 
 	wire [31:0] 	muxa_i;
@@ -93,9 +92,9 @@ module titan_id_stage(
 	wire 		shift_op;
 	wire 	[31:0]	pc_mux;
 	wire 		load_store_op;
+	wire 		pc_jexc;
+	wire		pc_bexc;
 
-
-	assign id_illegal_inst_o	= illegal_inst; 
 	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
 	assign take_jump_o		= jump_op;
@@ -104,12 +103,38 @@ module titan_id_stage(
 	assign _imm 		   	= ((jalr_op)? (($signed(imm) + $signed(muxa_i))) : (imm<<1));
 	assign pc_jump			= (jalr_op)? _imm : id_pc_i  + _imm;
 	assign pc_jump_address_o 	= {pc_jump[31:1], 1'b0}; 
+	assign pc_jexc			= (jump_op)? ~(pc_jump_address_o[1:0] == 0): 1'b0;
 	assign pc_branch_address_o   	= _imm + id_pc_i; 
+	assign pc_bexc			= (branch_op)? ~(pc_branch_address_o[1:0] == 0): 1'b0;
 	assign csr_data			= (csr_imm_op)? {27'b0, rs1} : port_a;  
 
 	assign pc_mux			= (jump_op)? (id_pc_i + 4): id_pc_i;
-	assign id_syscall_op_o		= syscall_op;
-	assign id_break_op_o		= break_op;
+
+	//EXCEPTION HANDLING 
+	localparam INST_MISALIGNED 	= 4'h0;
+	localparam ILLEGAL_INST 	= 4'h2;
+	localparam BREAKPOINT		= 4'h3;
+	localparam MCALL		= 4'hb;
+
+	always @(*) begin
+		if(if_trap_valid_i) begin
+			id_exc_data_o   = if_exc_data_i;
+			id_trap_valid_o = if_trap_valid_i; 
+			id_exception_o  = if_exception_i;
+		end else begin
+			id_trap_valid_o	= (break_op|syscall_op|illegal_inst | (take_branch & pc_bexc) | pc_jexc);
+			case(1'b1) 
+				break_op   	: begin id_exception_o = BREAKPOINT;   id_exc_data_o = id_pc_i;end 
+				syscall_op 	: begin id_exception_o = MCALL;        id_exc_data_o = 0; end
+				illegal_inst  	: begin id_exception_o = ILLEGAL_INST; id_exc_data_o = id_instruction_i; end
+				pc_bexc	& take_branch	: begin id_exception_o = INST_MISALIGNED; id_exc_data_o = pc_branch_address_o; end 
+				pc_jexc		: begin id_exception_o = INST_MISALIGNED; id_exc_data_o = pc_jump_address_o; end 
+				default 	: begin id_exception_o = 0; id_exc_data_o = 0; end 
+			endcase 
+		end 
+	end 
+
+
 
 	titan_mux21 SRA_MUX (
 			.in_0(_port_b),
@@ -204,13 +229,11 @@ module titan_id_stage(
 			.id_we(we),
 			.id_mem_flags(mem_flags),
 			.id_mem_ex_sel(mem_ex_sel),
-			.id_illegal_inst(illegal_inst),
-			.id_inst_addr_misaligned(id_inst_addr_misaligned_i),
-			.id_inst_access_fault(id_inst_access_fault_i),
 			.id_fence_op(fence_op),
+			.id_exception(id_exception_o),
+			.id_exc_data(id_exc_data_o),
+			.id_trap_valid(id_trap_valid_o),
 			.id_xret_op(xret_op),
-			.id_break_op(break_op),
-			.id_syscall_op(syscall_op),
 			.id_csr_data(csr_data),
 			.id_csr_op(csr_op),
 			.id_csr_addr(csr_addr),
@@ -226,13 +249,11 @@ module titan_id_stage(
 			.ex_store_data(ex_store_data_o),
 			.ex_mem_flags(ex_mem_flags_o),
 			.ex_mem_ex_sel(ex_mem_ex_sel_o),
-			.ex_illegal_inst(ex_illegal_inst_o),
-			.ex_inst_addr_misaligned(ex_inst_addr_misaligned_o),
-			.ex_inst_access_fault(ex_inst_access_fault_o),
+			.ex_exception(ex_exception_o),
+			.ex_exc_data(ex_exc_data_o),
+			.ex_trap_valid(ex_trap_valid_o),
 			.ex_fence_op(ex_fence_op_o),
 			.ex_xret_op(ex_xret_op_o),
-			.ex_break_op(ex_break_op_o),
-			.ex_syscall_op(ex_syscall_op_o),
 			.ex_csr_data(ex_csr_data_o),
 			.ex_csr_op(ex_csr_op_o),
 			.ex_csr_addr(ex_csr_addr_o),

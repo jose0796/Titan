@@ -17,11 +17,9 @@ module titan_exmem_register (
 		  input		[31:0]	ex_csr_data,
 		  input 	[ 2:0]  ex_csr_op,
 		  input		[11:0]	ex_csr_addr,
-		  input 		ex_illegal_inst,
-		  input 		ex_inst_addr_misaligned,
-		  input 		ex_inst_access_fault,
-		  input			ex_break_op,
-		  input			ex_syscall_op,
+		  input 	[31:0]	ex_exc_data,
+		  input 	[ 3:0]	ex_exception,
+		  input 		ex_trap_valid,
 		  input 		ex_fence_op,
 		  input 		ex_xret_op,
 		  output reg 	[31:0]	mem_pc,
@@ -36,13 +34,11 @@ module titan_exmem_register (
 		  output reg 	[31:0]	mem_csr_data,
 		  output reg 	[ 2:0] 	mem_csr_op,
 		  output reg 	[11:0]	mem_csr_addr,
-		  output reg 		mem_illegal_inst,
-		  output reg 		mem_inst_addr_misaligned,
-		  output reg 		mem_inst_access_fault,
+		  output reg	[31:0]	mem_exc_data,
+		  output reg 	[ 3:0]	mem_exception,
+		  output reg 		mem_trap_valid,
 		  output reg 		mem_xret_op,
-		  output reg 		mem_fence_op,
-		  output reg 		mem_break_op,
-		  output reg 		mem_syscall_op
+		  output reg 		mem_fence_op
 	 
 	 	 );
 
@@ -59,11 +55,9 @@ module titan_exmem_register (
 		mem_csr_data	   		<= ((rst|flush)? 32'b0 : ((stall)? mem_csr_data			: ex_csr_data));
 		mem_csr_op			<= ((rst|flush)? 3'b0  : ((stall)? mem_csr_op 			: ex_csr_op));
 		mem_csr_addr			<= ((rst|flush)? 12'b0 : ((stall)? mem_csr_addr			: ex_csr_addr));
-		mem_illegal_inst		<= ((rst|flush)? 1'b0  : ((stall)? mem_illegal_inst		: ex_illegal_inst));
-		mem_inst_addr_misaligned	<= ((rst|flush)? 1'b0  : ((stall)? mem_inst_addr_misaligned	: ex_inst_addr_misaligned));
-		mem_inst_access_fault		<= ((rst|flush)? 1'b0  : ((stall)? mem_inst_access_fault	: ex_inst_access_fault)); 
-		mem_syscall_op	   		<= ((rst|flush)? 1'b0  : ((stall)? mem_syscall_op		: ex_syscall_op));
-		mem_break_op	   		<= ((rst|flush)? 1'b0  : ((stall)? mem_break_op			: ex_break_op));
+		mem_exception			<= ((rst|flush)? 4'b0  : ((stall)? mem_exception		: ex_exception));
+		mem_exc_data			<= ((rst|flush)? 32'b0 : ((stall)? mem_exc_data			: ex_exc_data));
+		mem_trap_valid			<= ((rst|flush)? 1'b0  : ((stall)? mem_trap_valid		: ex_trap_valid));
 		mem_fence_op	   		<= ((rst|flush)? 1'b0  : ((stall)? mem_fence_op			: ex_fence_op));
 		mem_xret_op	   		<= ((rst|flush)? 1'b0  : ((stall)? mem_xret_op			: ex_xret_op));
 	end

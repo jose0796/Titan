@@ -41,8 +41,8 @@ module titan_control_unit (
 		assign if_flush_o   = rst_i; 
 		assign id_flush_o   = (if_stall_req_i & ~(id_stall_o))| illegal_nop | if_kill_o | rst_i | exception_stall_req_i | xcall_break_stall_req_i;
 		assign ex_flush_o   =  rst_i | exception_stall_req_i ;
-		assign mem_flush_o  =  rst_i | exception_stall_req_i ;
-		assign wb_flush_o   =  rst_i ; 
+		assign mem_flush_o  =  rst_i | exception_stall_req_i;
+		assign wb_flush_o   =  rst_i | mem_stall_req_i; 
 
 		always @(*) begin
 			case(1'b1)

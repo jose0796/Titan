@@ -52,11 +52,13 @@
 		wire 	[ 1:0] 	if_pc_sel;
 		wire 	[31:0]	if_instruction;
 		
+		wire 		if_trap_valid;
+		wire 	[ 3:0]	if_exception;
+		wire 	[31:0]	if_exc_data;
 
 		//ID STAGE SIGNALS 
 		//+IN 
 		wire 	[31:0]	id_instruction;
-		wire 		id_illegal_inst;
 		wire	[31:0]	id_pc;
 		wire	[ 4:0]	wb_waddr;
 		wire		wb_we;
@@ -66,14 +68,16 @@
 		wire 	[31:0]	mem_fwd_drd;
 		wire	[ 1:0]	forward_a_sel;
 		wire 	[ 1:0]	forward_b_sel;
-		wire 		id_inst_addr_misaligned;
-		wire 		id_inst_access_fault;
 	
 		//+OUT
+		wire 		id_trap_valid;
+		wire 	[ 3:0]	id_exception;
+		wire 	[31:0]	id_exc_data;
+		wire 		ex_trap_valid;
+		wire 	[ 3:0]	ex_exception;
+		wire 	[31:0]	ex_exc_data;
 		wire 	[ 4:0]	id_rs1;
 		wire 	[ 4:0]	id_rs2;
-		wire 		id_syscall_op;
-		wire 		id_break_op;
 		wire 	[ 4:0]	ex_rs1;	
 		wire 	[31:0]	pc_jump_addr; 
 		wire 	[31:0]	pc_branch_addr;
@@ -88,8 +92,6 @@
 		wire 		ex_we;
 		wire 	[ 5:0]	ex_mem_flags;
 		wire 		ex_mem_ex_sel;
-		wire		ex_break_op;
-		wire		ex_syscall_op;
 		wire	[ 2:0]	ex_csr_op;
 		wire 	[31:0]	ex_csr_data;
 		wire	[11:0]	ex_csr_addr;
@@ -100,9 +102,6 @@
 		wire 		ex_flush;
 		wire 		ex_fence_op;
 		wire 		ex_xret_op;
-		wire 		ex_inst_addr_misaligned;
-		wire 		ex_inst_access_fault;
-		wire 		ex_illegal_inst;
 		wire 	[31:0]	ex_store_data;
 
 		//+OUT
@@ -117,8 +116,11 @@
 		wire 	[31:0]	mem_csr_data;
 		wire	[ 2:0]	mem_csr_op;
 		wire	[11:0]	mem_csr_addr;
-		wire 		mem_break_op;
-		wire 		mem_syscall_op;
+		wire 		mem_trap_valid_i;
+		wire 	[ 3:0]	mem_exception_i;
+		wire 	[31:0]	mem_exc_data_i;
+		wire 		mem_trap_valid_o;
+		wire 	[ 3:0]	mem_exception_o;
 
 		//LSU
 		wire 		mwrite; 
@@ -136,9 +138,6 @@
 		wire 	[31:0]	mem_load_data;
 		wire 		mem_fence_op;
 		wire 		mem_xret_op;
-		wire 		mem_inst_addr_misaligned;
-		wire 		mem_inst_access_fault;
-		wire 		mem_illegal_inst;
 	
 		//+OUT
 		
@@ -153,18 +152,12 @@
 		wire 	[31:0]	wb_csr_data;
 		wire 	[11:0]	wb_csr_addr;
 		wire 	[ 2:0]	wb_csr_op;
-		wire 		wb_break_op;
-		wire 		wb_syscall_op;
+		wire 		wb_trap_valid;
+		wire 	[ 3:0]	wb_exception;
+		wire 	[31:0]	wb_exc_data;
 		/* verilator lint_off UNDRIVEN */ 
 		wire 		wb_fence_op;
 		wire 		wb_xret_op;
-		wire 		wb_inst_addr_misaligned;
-		wire 		wb_inst_access_fault;
-		wire 		wb_illegal_inst;
-		wire 		wb_load_addr_misaligned;
-		wire 		wb_store_addr_misaligned;
-		wire 		wb_load_access_fault;
-		wire 		wb_store_access_fault;
 		wire 		csr_dependence; 
 		wire 		ld_dependence;
 
@@ -178,11 +171,11 @@
 		wire 		if_kill;
 		wire 		illegal_stall_req;
 
-		wire 	hazard; 
-		wire	en_fwd;
-		wire 	csr_stall_req;
-		wire 	ld_stall_req;
-		wire 	xcall_break_stall_req;
+		wire 		hazard; 
+		wire		en_fwd;
+		wire 		csr_stall_req;
+		wire 		ld_stall_req;
+		wire 		xcall_break_stall_req;
 
 		//CSR signals 
 		//
@@ -202,7 +195,7 @@
 				.clk_i(clk_i),
 				.rst_i(rst_i),
 				// CONTROL => IF
-				.if_stall(if_stall & ~if_kill),
+				.if_stall(if_stall & ~if_kill & ~wb_trap_valid),
 				.if_flush(if_flush),
 				.id_stall(id_stall),
 				.id_flush(id_flush),
@@ -222,8 +215,9 @@
 				.if_pc_o(if_pc),
 				.id_pc_o(id_pc),
 				.id_instruction_o(id_instruction),
-				.id_inst_addr_misaligned_o(id_inst_addr_misaligned),
-				.id_inst_access_fault_o(id_inst_access_fault)
+				.if_exception_o(if_exception),
+				.if_exc_data_o(if_exc_data),
+				.if_trap_valid_o(if_trap_valid)
 				//----------------------------------
 				); 
 
@@ -238,13 +232,11 @@
 				// ID <= IF
 				.id_pc_i(id_pc),
 				.id_instruction_i(id_instruction),
-				.id_inst_addr_misaligned_i(id_inst_addr_misaligned),
-				.id_inst_access_fault_i(id_inst_access_fault),
 				//---------------------------------------
 				//ID <= WB
 				.wb_data_i(wb_result),		
 				.wb_address_i(wb_waddr),	
-				.wb_we_i(wb_we),		
+				.wb_we_i(wb_we & ~wb_trap_valid),		
 				//---------------------------------------
 				// FORWARDING STAGE => ID
 				.ex_fwd_drd_i(ex_fwd_drd),	//ID <= EX
@@ -256,16 +248,21 @@
 				// ID => FORWARDING UNIT
 				.id_rs1_o(id_rs1),
 				.id_rs2_o(id_rs2),
-				.id_illegal_inst_o(id_illegal_inst),
 				//---------------------------------------
 				// ID => IF & CONTROL (JUMPS)
 				.pc_branch_address_o(pc_branch_addr),
 				.pc_jump_address_o(pc_jump_addr),    
 				.take_branch_o(take_branch),	     
 				.take_jump_o(take_jump),
-				.id_syscall_op_o(id_syscall_op),
-				.id_break_op_o(id_break_op),
+				.id_exception_o(id_exception),
+				.id_exc_data_o(id_exc_data),
+				.id_trap_valid_o(id_trap_valid),
 				//---------------------------------------
+				//EXCEPTIONS IN
+				//
+				.if_exception_i(if_exception),
+				.if_exc_data_i(if_exc_data),
+				.if_trap_valid_i(if_trap_valid),
 				//---------------------------------------
 				// OUTPUTS
 				.ex_pc_o(ex_pc),
@@ -280,13 +277,11 @@
 				.ex_mem_flags_o(ex_mem_flags),
 				.ex_mem_ex_sel_o(ex_mem_ex_sel),
 				//EXCEPTIONS SIGNALS
-				.ex_illegal_inst_o(ex_illegal_inst),
-				.ex_inst_addr_misaligned_o(ex_inst_addr_misaligned),
-				.ex_inst_access_fault_o(ex_inst_access_fault),
+				.ex_exception_o(ex_exception),
+				.ex_exc_data_o(ex_exc_data),
+				.ex_trap_valid_o(ex_trap_valid),
 				.ex_fence_op_o(ex_fence_op),
 				.ex_xret_op_o(ex_xret_op),
-				.ex_break_op_o(ex_break_op),
-				.ex_syscall_op_o(ex_syscall_op),
 				//CSR SIGNALS
 				.ex_csr_data_o(ex_csr_data),
 				.ex_csr_op_o(ex_csr_op),
@@ -313,13 +308,11 @@
 				.ex_we_i(ex_we),
 				.ex_mem_flags_i(ex_mem_flags),
 				.ex_mem_ex_sel_i(ex_mem_ex_sel),
-				.ex_illegal_inst_i(ex_illegal_inst),
-				.ex_inst_addr_misaligned_i(ex_inst_addr_misaligned),
-				.ex_inst_access_fault_i(ex_inst_access_fault),
+				.ex_exception_i(ex_exception),
+				.ex_exc_data_i(ex_exc_data),
+				.ex_trap_valid_i(ex_trap_valid),
 				.ex_fence_op_i(ex_fence_op),
 				.ex_xret_op_i(ex_xret_op),
-				.ex_break_op_i(ex_break_op),
-				.ex_syscall_op_i(ex_syscall_op),
 				.ex_csr_addr_i(ex_csr_addr),
 				.ex_csr_data_i(ex_csr_data),
 				.ex_csr_op_i(ex_csr_op),
@@ -335,13 +328,11 @@
 				.mem_mem_flags_o(mem_mem_flags),
 				.mem_mem_ex_sel_o(mem_mem_ex_sel),
 				//EXCEPTIONS
-				.mem_illegal_inst_o(mem_illegal_inst),
-				.mem_inst_addr_misaligned_o(mem_inst_addr_misaligned),
-				.mem_inst_access_fault_o(mem_inst_access_fault),
+				.mem_exception_o(mem_exception_i),
+				.mem_exc_data_o(mem_exc_data_i),
+				.mem_trap_valid_o(mem_trap_valid_i),
 				.mem_fence_op_o(mem_fence_op),
 				.mem_xret_op_o(mem_xret_op),
-				.mem_break_op_o(mem_break_op),
-				.mem_syscall_op_o(mem_syscall_op),
 				//CSR signals
 				.mem_csr_data_o(mem_csr_data),
 				.mem_csr_op_o(mem_csr_op),
@@ -384,13 +375,13 @@
 				.mem_csr_addr_i(mem_csr_addr),
 				.mem_csr_op_i(mem_csr_op),
 				//EXCEPTION signals
-				.mem_illegal_inst_i(mem_illegal_inst),
-				.mem_inst_addr_misaligned_i(mem_inst_addr_misaligned),
-				.mem_inst_access_fault_i(mem_inst_access_fault),
+				.mem_exception_o(mem_exception_o),
+				.mem_trap_valid_o(mem_trap_valid_o),
+				.mem_exception_i(mem_exception_i),
+				.mem_exc_data_i(mem_exc_data_i),
+				.mem_trap_valid_i(mem_trap_valid_i),
 				.mem_fence_op_i(mem_fence_op),
 				.mem_xret_op_i(mem_xret_op),
-				.mem_break_op_i(mem_break_op),
-				.mem_syscall_op_i(mem_syscall_op),
 				//----------------------------------------
 				// MEM => CONTROL
 				//----------------------------------------
@@ -407,17 +398,11 @@
 				.wb_csr_op_o(wb_csr_op),
 				.wb_rs1_o(wb_rs1),
 				// MEM => EXCEPTION UNIT
-				.wb_illegal_inst_o(wb_illegal_inst), 
-				.wb_inst_addr_misaligned_o(wb_inst_addr_misaligned),
-				.wb_inst_access_fault_o(wb_inst_access_fault),
-				.wb_load_access_fault_o(wb_load_access_fault),
-				.wb_store_access_fault_o(wb_store_access_fault),
-				.wb_load_addr_misaligned_o(wb_load_addr_misaligned),
-				.wb_store_addr_misaligned_o(wb_store_addr_misaligned),
+				.wb_exception_o(wb_exception),
+				.wb_exc_data_o(wb_exc_data),
+				.wb_trap_valid_o(wb_trap_valid),
 				.wb_fence_op_o(wb_fence_op),
-				.wb_xret_op_o(wb_xret_op),
-				.wb_break_op_o(wb_break_op),
-				.wb_syscall_op_o(wb_syscall_op)
+				.wb_xret_op_o(wb_xret_op)
 				/* verilator lint_on UNUSED */
 				//---------------------------------------
 				); 
@@ -466,7 +451,7 @@
 				//DATA PORT INTERFACE 
 				.maddr_i(mem_result),
 				.mdat_i(mem_store_data),
-				.mwrite_i(mwrite),
+				.mwrite_i(mwrite & ~(mem_exception_o == 4'h6 & mem_trap_valid_o)),
 				.mread_i(mread),
 				.mword_i(mword),
 				.mhw_i(mhw),
@@ -487,12 +472,12 @@
 	
 
 		titan_hazard_unit HZ (
-				.id_illegal_i(id_illegal_inst),
-				.ex_illegal_i(ex_illegal_inst),
-				.mem_illegal_i(mem_illegal_inst),
-				.id_xcall_break_i(id_syscall_op|id_break_op),
-				.ex_xcall_break_i(ex_syscall_op|ex_break_op),
-				.mem_xcall_break_i(mem_syscall_op|mem_break_op),
+				.id_illegal_i(id_exception == 2 & id_trap_valid),
+				.ex_illegal_i(ex_exception == 2 & ex_trap_valid),
+				.mem_illegal_i(mem_exception_o == 2 & mem_trap_valid_o),
+				.id_xcall_break_i(id_exception == 4'hb |id_exception == 4'h3 & id_trap_valid),
+				.ex_xcall_break_i(ex_exception == 4'hb |ex_exception == 4'h3 & ex_trap_valid),
+				.mem_xcall_break_i(mem_exception_o == 4'hb |mem_exception_o == 4'h3 & mem_trap_valid_o),
 				.ex_csr_op_i(|ex_csr_op),
 				.mem_csr_op_i(|mem_csr_op),
 				.ex_ld_op_i(ex_mem_ex_sel),
@@ -546,15 +531,9 @@
 				.xint_msip_i(xint_msip_i),
 				.exception_pc_i(wb_pc),
 				.exception_inst_i(wb_instruction),
-				.xcall_i(wb_syscall_op),
-				.xbreak_i(wb_break_op),
-				.inst_addr_misaligned_i(wb_inst_addr_misaligned),
-				.inst_access_fault_i(wb_inst_access_fault),
-				.illegal_inst_i(wb_illegal_inst),
-				.load_addr_misaligned_i(wb_load_addr_misaligned),
-				.load_access_fault_i(wb_load_access_fault),
-				.store_addr_misaligned_i(wb_store_addr_misaligned),
-				.store_access_fault_i(wb_store_access_fault),
+				.exception_i(wb_exception),
+				.exc_data_i(wb_exc_data),
+				.trap_valid_i(wb_trap_valid),
 				.inst_fence_i(wb_fence_op),
 				.inst_xret_i(wb_xret_op),
 				//OUTPUTS

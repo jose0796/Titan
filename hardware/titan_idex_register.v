@@ -18,11 +18,9 @@ module titan_idex_register (
 		input 		[ 2:0] 	id_csr_op,
 		input 		[11:0]	id_csr_addr,	
 		input 		[4:0] 	id_waddr,
-		input 			id_inst_addr_misaligned,
-		input 			id_inst_access_fault,
-		input 			id_illegal_inst,
-		input 			id_break_op,
-		input 			id_syscall_op,
+		input 		[ 3:0]	id_exception,
+		input 			id_trap_valid,
+		input 		[31:0]	id_exc_data,
 		input 			id_fence_op,
 		input 			id_xret_op,
 		output reg	[31:0]	ex_pc,
@@ -35,13 +33,11 @@ module titan_idex_register (
 		output reg 		ex_we,
 		output reg 	[ 5:0] 	ex_mem_flags,
 		output reg 		ex_mem_ex_sel,
-		output reg 		ex_inst_addr_misaligned,
-		output reg		ex_inst_access_fault,
-		output reg		ex_illegal_inst,
+		output reg 	[ 3:0]	ex_exception,
+		output reg		ex_trap_valid,
+		output reg	[31:0]	ex_exc_data,
 		output reg		ex_fence_op,
 		output reg		ex_xret_op,
-		output reg 		ex_break_op,
-		output reg 		ex_syscall_op,
 		output reg 	[31:0]	ex_csr_data,
 		output reg 	[11:0]	ex_csr_addr,
 		output reg 	[ 2:0] 	ex_csr_op,
@@ -59,13 +55,11 @@ module titan_idex_register (
 		ex_store_data  	   	<= ((rst|flush)? 32'h0  : ((stall)? ex_store_data		: id_store_data   ));
 		ex_mem_flags	   	<= ((rst|flush)? 6'b0   : ((stall)? ex_mem_flags	 	: id_mem_flags)); 
 		ex_mem_ex_sel	   	<= ((rst|flush)? 1'b0   : ((stall)? ex_mem_ex_sel	  	: id_mem_ex_sel)); 
-		ex_illegal_inst	    	<= ((rst|flush)? 1'b0   : ((stall)? ex_illegal_inst 	  	: id_illegal_inst));
-		ex_inst_addr_misaligned <= ((rst|flush)? 1'b0   : ((stall)? ex_inst_addr_misaligned     : id_inst_addr_misaligned));
-		ex_inst_access_fault 	<= ((rst|flush)? 1'b0   : ((stall)? ex_inst_access_fault     	: id_inst_access_fault));
+		ex_exception		<= ((rst|flush)? 4'b0	: ((stall)? ex_exception		: id_exception)); 
+		ex_trap_valid		<= ((rst|flush)? 1'b0	: ((stall)? ex_trap_valid		: id_trap_valid)); 
+		ex_exc_data		<= ((rst|flush)? 32'b0	: ((stall)? ex_exc_data			: id_exc_data)); 
 		ex_fence_op	    	<= ((rst|flush)? 1'b0   : ((stall)? ex_fence_op 	  	: id_fence_op));
 		ex_xret_op	    	<= ((rst|flush)? 1'b0   : ((stall)? ex_xret_op 	  		: id_xret_op));
-		ex_break_op	    	<= ((rst|flush)? 1'b0   : ((stall)? ex_break_op 	  	: id_break_op));
-		ex_syscall_op       	<= ((rst|flush)? 1'b0   : ((stall)? ex_syscall_op       	: id_syscall_op));
 		ex_csr_op	    	<= ((rst|flush)? 3'b0   : ((stall)? ex_csr_op			: id_csr_op )); 
 		ex_csr_addr	    	<= ((rst|flush)? 12'b0  : ((stall)? ex_csr_addr			: id_csr_addr )); 
 		ex_csr_data	    	<= ((rst|flush)? 32'b0  : ((stall)? ex_csr_data 	  	: id_csr_data)); 

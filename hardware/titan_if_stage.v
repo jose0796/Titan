@@ -23,14 +23,23 @@ module titan_if_stage #(
 		output [31:0]	if_pc_o,
 		output [31:0] 	id_instruction_o,
 		output [31:0] 	id_pc_o,
-		output 		id_inst_addr_misaligned_o,
-		output 		id_inst_access_fault_o	); 
+		output [ 3:0]	if_exception_o,
+		output [31:0]	if_exc_data_o,
+		output 		if_trap_valid_o	); 
 
-	wire [31:0] if_pc_mux; 
-	wire [31:0] if_pc_add4;
-	wire 	    if_inst_addr_misaligned; 
-	assign 	    if_inst_addr_misaligned = ~(if_pc_o[1:0] == 0);
-	
+	localparam INST_ADDR_MISALIGNED = 4'h0;
+	localparam INST_ACCESS_FAULT	= 4'h1;
+
+	wire 	[31:0] 	if_pc_mux; 
+	wire 	[31:0] 	if_pc_add4;
+	wire 	[ 3:0] 	if_exception;
+	wire 	    	trap_valid;
+	wire 	    	addr_misaligned;
+       	wire 	[31:0]	exc_data;	
+	assign 	   	addr_misaligned = ~(if_pc_o[1:0] == 0);
+	assign 		exc_data   	= if_pc_o; 
+	assign	   	trap_valid 	= (if_inst_access_fault_i | addr_misaligned ); 
+	assign		if_exception 	= (if_inst_access_fault_i)? INST_ACCESS_FAULT : ((addr_misaligned)? INST_ADDR_MISALIGNED: 4'b0);
 
 	titan_pc_reg  #(.RESET_ADDR(RESET_ADDR))
 			PC_REG(.clk_i(clk_i),
@@ -58,13 +67,15 @@ module titan_if_stage #(
 				.id_stall(id_stall),
 				.id_flush(id_flush),
 				.if_pc(if_pc_o),
-				.if_inst_addr_misaligned(if_inst_addr_misaligned),
-				.if_inst_access_fault(if_inst_access_fault_i),
+				.if_exception_i(if_exception),
+				.if_trap_valid(trap_valid),
+				.if_exc_data(exc_data),
 				.if_inst(if_instruction_i),
 				.id_pc(id_pc_o),
 				.id_inst(id_instruction_o),
-				.id_inst_addr_misaligned(id_inst_addr_misaligned_o),
-		       		.id_inst_access_fault(id_inst_access_fault_o)	);  
+				.if_exception_o(if_exception_o),
+				.id_exc_data(if_exc_data_o),
+				.id_trap_valid(if_trap_valid_o)	); 
 endmodule 	
 		
 	
