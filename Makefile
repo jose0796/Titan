@@ -72,10 +72,13 @@ run_test_ui:
 run_test_mi: 
 	@./build/Titan.exe --file tests/riscv-tests/rv32mi-p-$(obj).elf --timeout 100000 --trace
 
+run_test_um: 
+	@./build/Titan.exe --file tests/riscv-tests/rv32um-p-$(obj).elf --timeout 100000 --trace
+
 run_benchmark:
-	@./build/Titan.exe --file tests/benchmarks/$(obj).riscv --timeout 10000000 --trace
+	@./build/Titan.exe --file tests/benchmarks/$(obj).riscv --timeout 10000000
 
 vcd:
-	@gtkwave build/vcd/*.vcd >/dev/null &
+	@gtkwave --giga build/vcd/*.vcd >/dev/null &
 
 .PHONY: verilate compile-tests build-model run-tests clean distclean

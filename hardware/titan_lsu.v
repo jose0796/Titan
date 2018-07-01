@@ -132,10 +132,12 @@ module titan_lsu (
 							dcyc_o 	<= 1'b0;
 							dstb_o 	<= 1'b0;
 							d_state <= d_str;
+							dwe_o	<= 1'b0;
 						end else if(derr_i) begin
 							dcyc_o <= 1'b0;
 							dstb_o <= 1'b0;
 							d_state <= d_str; 
+							dwe_o	<= 1'b0;
 						end
 					end
 					default: begin

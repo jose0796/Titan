@@ -174,7 +174,7 @@ module titan_dc_unit (
 			is_sltu     = |{sltu, sltiu};
 			is_alu      = |{add,addi,sub,is_xor,is_and,is_or,is_sll,is_sr, is_slt, is_sltu}; 
 			is_csr	    = |{rw,rs,rc,is_csri};
-			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, jalr, is_st, is_ld, lui,auipc,is_csri };
+			is_immop    = |{addi,slli,srai, srli, slti, sltiu, ori, andi, xori, is_st, is_ld, lui,auipc,is_csri };
 			is_wr       = |{is_imm, is_alu, is_ld, auipc, lui,is_csr, is_j}; //determines if operations is going to write 
 			is_fence    = |{fence,fencei};
 			illegal	    = ~|{is_j,is_b,is_add,is_sub,is_xor,is_and,is_or,is_sll,is_sr,is_slt,is_sltu,is_csr,is_fence,_break,call,xret};
