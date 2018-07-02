@@ -21,7 +21,9 @@ module titan_hazard_unit (
 		
 		  wire csr;
 		  wire ld;
+		  /* verilator lint_off UNOPTFLAT*/
 		  wire xcall_break;
+		  /* verilator lint_on UNOPTFLAT*/
 		  wire illegal;
 		  assign csr_stall_req_o 	 = csr;
 		  assign ld_stall_req_o  	 = ld;

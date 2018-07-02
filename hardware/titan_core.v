@@ -72,7 +72,6 @@
 		//+OUT
 		wire 		id_trap_valid;
 		wire 	[ 3:0]	id_exception;
-		wire 	[31:0]	id_exc_data;
 		wire 		ex_trap_valid;
 		wire 	[ 3:0]	ex_exception;
 		wire 	[31:0]	ex_exc_data;
@@ -255,7 +254,6 @@
 				.take_branch_o(take_branch),	     
 				.take_jump_o(take_jump),
 				.id_exception_o(id_exception),
-				.id_exc_data_o(id_exc_data),
 				.id_trap_valid_o(id_trap_valid),
 				//---------------------------------------
 				//EXCEPTIONS IN

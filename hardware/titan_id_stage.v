@@ -32,7 +32,6 @@ module titan_id_stage(
 		 output 		take_jump_o,
 		 output reg 	[ 3:0]	id_exception_o,
 		 output reg		id_trap_valid_o,
-		 output reg 	[31:0]	id_exc_data_o,
 		 output 	[31:0]  ex_pc_o,
 		 output 	[31:0]	ex_instruction_o,
 		 output 	[31:0] 	ex_port_a_o,
@@ -94,6 +93,7 @@ module titan_id_stage(
 	wire 		load_store_op;
 	wire 		pc_jexc;
 	wire		pc_bexc;
+	wire 	[31:0]	id_exc_data;
 
 	assign id_store_data		= muxb_i;
 	assign take_branch_o		= (branch_op)? take_branch: 1'b0;
@@ -118,18 +118,18 @@ module titan_id_stage(
 
 	always @(*) begin
 		if(if_trap_valid_i) begin
-			id_exc_data_o   = if_exc_data_i;
+			id_exc_data   = if_exc_data_i;
 			id_trap_valid_o = if_trap_valid_i; 
 			id_exception_o  = if_exception_i;
 		end else begin
 			id_trap_valid_o	= (break_op|syscall_op|illegal_inst | (take_branch & pc_bexc) | pc_jexc);
 			case(1'b1) 
-				break_op   	: begin id_exception_o = BREAKPOINT;   id_exc_data_o = id_pc_i;end 
-				syscall_op 	: begin id_exception_o = MCALL;        id_exc_data_o = 0; end
-				illegal_inst  	: begin id_exception_o = ILLEGAL_INST; id_exc_data_o = id_instruction_i; end
-				pc_bexc	& take_branch	: begin id_exception_o = INST_MISALIGNED; id_exc_data_o = pc_branch_address_o; end 
-				pc_jexc		: begin id_exception_o = INST_MISALIGNED; id_exc_data_o = pc_jump_address_o; end 
-				default 	: begin id_exception_o = 0; id_exc_data_o = 0; end 
+				break_op   	: begin id_exception_o = BREAKPOINT;   id_exc_data = id_pc_i;end 
+				syscall_op 	: begin id_exception_o = MCALL;        id_exc_data = 0; end
+				illegal_inst  	: begin id_exception_o = ILLEGAL_INST; id_exc_data = id_instruction_i; end
+				pc_bexc	& take_branch	: begin id_exception_o = INST_MISALIGNED; id_exc_data = pc_branch_address_o; end 
+				pc_jexc		: begin id_exception_o = INST_MISALIGNED; id_exc_data = pc_jump_address_o; end 
+				default 	: begin id_exception_o = 0; id_exc_data = 0; end 
 			endcase 
 		end 
 	end 
@@ -231,7 +231,7 @@ module titan_id_stage(
 			.id_mem_ex_sel(mem_ex_sel),
 			.id_fence_op(fence_op),
 			.id_exception(id_exception_o),
-			.id_exc_data(id_exc_data_o),
+			.id_exc_data(id_exc_data),
 			.id_trap_valid(id_trap_valid_o),
 			.id_xret_op(xret_op),
 			.id_csr_data(csr_data),
